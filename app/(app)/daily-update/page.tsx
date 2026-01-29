@@ -1,3 +1,5 @@
+import ComingSoon from "@/components/ComingSoon";
+
 export default function DailyUpdatePage() {
-    return <h1>Daily Update</h1>
+    return <ComingSoon />;
 }

@@ -1,6 +1,7 @@
 import { UserProfile } from "@/types/user"
 
 export default function ProfileCard({ profile }: { profile: UserProfile }) {
+    console.log("ProfileCard profile:", profile)
     return (
         <div className="relative bg-brand-blue rounded-3xl p-8 text-white overflow-hidden shadow-xl">
 
@@ -20,13 +21,13 @@ export default function ProfileCard({ profile }: { profile: UserProfile }) {
 
                 {/* Details */}
                 <div className="flex-1 space-y-4 text-center md:text-left">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-brand-yellow to-yellow-200 bg-clip-text text-transparent">
+                    <h2 className="text-3xl font-bold bg-linear-to-r from-brand-yellow to-yellow-200 bg-clip-text text-transparent">
                         {profile.full_name}
                     </h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm text-white/80">
                         <div><b>Campus:</b> {profile.campus_id || "Not Assigned"}</div>
-                        <div><b>District:</b> {profile.district_id || "Not Assigned"}</div>
+                        <div><b>District:</b> {profile.district_name || "Not Assigned"}</div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-2">

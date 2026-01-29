@@ -38,10 +38,11 @@ export default function Sidebar({ role }: Props) {
       <div className="mb-10 px-2 flex flex-col items-center">
         <div className="relative w-full h-14">
           <Image
-            src="/logo.png"
+            src="/logo_white.png"
+            width={200}
+            height={100}
             alt="Mument 2.0"
-            fill
-            className="object-contain brightness-0 invert"
+            className="object-contain"
             priority
           />
         </div>

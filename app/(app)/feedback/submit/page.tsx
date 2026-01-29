@@ -1,3 +1,7 @@
+import ComingSoon from "@/components/ComingSoon"
+
 export default function FeedbackSubmitPage() {
-    return <h1>Submit Feedback</h1>
+    return (
+        <ComingSoon />
+    )
 }

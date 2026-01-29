@@ -10,7 +10,7 @@ export const permissions = {
   },
 
   canViewFeedbackInbox(role: Role) {
-    return ["qa_foreman", "qa_watcher", "admin"].includes(role)
+    return ["qa_foreman", "qa_watcher", "qa_lead", "admin"].includes(role)
   },
 
   canCreateAnnouncements(role: Role) {

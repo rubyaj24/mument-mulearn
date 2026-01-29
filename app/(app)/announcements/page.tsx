@@ -1,3 +1,5 @@
+import ComingSoon from "@/components/ComingSoon";
+
 export default function AnnouncementsPage() {
-    return <h1>Announcements</h1>
+    return <ComingSoon />;
 }

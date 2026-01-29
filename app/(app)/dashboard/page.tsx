@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { UserProfile } from "@/types/user"
 import ProfileCard from "./components/ProfileCard"
 import StatsCards from "./components/StatsCards"
+import { getDistrictName } from "@/lib/district"
 
 
 
@@ -23,10 +24,14 @@ export default async function DashboardPage() {
   const typedProfile = profile as UserProfile
   const role = typedProfile.role
 
+  const districtName = await getDistrictName(supabaseServer, typedProfile.district_id)
+  console.log("District Name:", districtName)
+  const typedProfileWithDistrict = {...typedProfile, district_name: districtName ?? undefined}
+
   return (
     <div className="space-y-6">
 
-      <ProfileCard profile={typedProfile} />
+      <ProfileCard profile={typedProfileWithDistrict} />
 
       <StatsCards />
 
