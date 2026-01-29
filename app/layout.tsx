@@ -3,7 +3,7 @@ import { Red_Hat_Display } from "next/font/google";
 import "./globals.css";
 
 const redHatDisplay = Red_Hat_Display({
-  variable: "--font-red-hat-display",
+  variable: "--font-redhat",
   subsets: ["latin"],
 });
 
