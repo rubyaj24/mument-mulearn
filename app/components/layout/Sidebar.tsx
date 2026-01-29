@@ -16,6 +16,7 @@ export default function Sidebar({ role }: Props) {
         <li><Link href="/profile">Profile</Link></li>
         <li><Link href="/feedback/submit">Submit Feedback</Link></li>
         <li><Link href="/checkpoints">Checkpoints</Link></li>
+        <li><Link href="/daily-update">Daily Update</Link></li>
 
         {permissions.canViewFeedbackInbox(role) && (
           <li><Link href="/feedback/inbox">Feedback Inbox</Link></li>

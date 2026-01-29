@@ -12,7 +12,7 @@ export async function getMyProfile(): Promise<UserProfile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, full_name, role, district_id, campus_id, created_at")
     .eq("id", user.id)
     .single()
 

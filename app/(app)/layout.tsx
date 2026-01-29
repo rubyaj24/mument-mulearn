@@ -9,7 +9,7 @@ export default async function AppLayout({
 }: {
   children: ReactNode
 }) {
-  const supabaseServer = createClient()
+  const supabaseServer = await createClient()
 
   // 1️⃣ Auth check (server-side)
   const {
@@ -21,13 +21,24 @@ export default async function AppLayout({
   }
 
   // 2️⃣ Fetch profile with role (RLS enforced)
-  const { data: profile } = await supabaseServer
+  const { data: profile, error } = await supabaseServer
     .from("profiles")
-    .select("*")
+    .select("id, full_name, role, district_id, campus_id, created_at")
     .eq("id", user.id)
     .single()
 
+  if (error) {
+    console.error("❌ Profile fetch error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      userId: user.id,
+    })
+    redirect("/login")
+  }
+
   if (!profile) {
+    console.error("❌ No profile row found for user:", user.id)
     redirect("/login")
   }
 
@@ -38,7 +49,7 @@ export default async function AppLayout({
       <Sidebar role={typedProfile.role} />
 
       <main style={{ flex: 1, padding: "1rem" }}>
-        <p>Role: {typedProfile.role}</p>
+        <p>User: {typedProfile.full_name} | Role: {typedProfile.role}</p>
         {children}
       </main>
     </div>

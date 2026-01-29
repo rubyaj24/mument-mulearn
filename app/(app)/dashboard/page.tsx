@@ -3,20 +3,23 @@ import { createClient } from "@/lib/supabase/server"
 import { UserProfile } from "@/types/user"
 
 export default async function DashboardPage() {
-  const supabaseServer = createClient()
+  const supabaseServer = await createClient()
+  
   const {
     data: { user },
   } = await supabaseServer.auth.getUser()
-
+  
   if (!user) return null
 
   const { data: profile } = await supabaseServer
     .from("profiles")
-    .select("role")
+    .select("id, full_name, role, district_id, campus_id, created_at")
     .eq("id", user.id)
     .single()
 
-  const role = (profile as UserProfile).role
+  if (!profile) return null
+  const typedProfile = profile as UserProfile
+  const role = typedProfile.role
 
   return (
     <>

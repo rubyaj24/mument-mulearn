@@ -8,8 +8,9 @@ export type Role =
 
 export interface UserProfile {
   id: string
-  name: string
-  email: string
+  full_name: string
   role: Role
-  campusId?: string
+  district_id: string
+  campus_id?: string
+  created_at?: string
 }

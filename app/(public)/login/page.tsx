@@ -11,15 +11,17 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // 🔐 If already logged in, skip login page
+  //  If already logged in, skip login page
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data }) => {
+    const checkSession = async () => {
+      const supabase = createClient()
+      const { data } = await supabase.auth.getSession()
       if (data.session) {
         router.replace("/dashboard")
       }
-    })
-  }, [router])
+    }
+    checkSession()
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
