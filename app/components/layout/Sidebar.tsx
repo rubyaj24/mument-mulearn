@@ -124,12 +124,12 @@ export default function Sidebar({ role, open, onClose }: Props) {
             </li>
           )}
 
-            <li>
-              <Link href="/announcements" className={getLinkStyle("/announcements")} onClick={onClose}>
-                <Megaphone size={20} />
-                Announcements
-              </Link>
-            </li>
+          <li>
+            <Link href="/announcements" className={getLinkStyle("/announcements")} onClick={onClose}>
+              <Megaphone size={20} />
+              Announcements
+            </Link>
+          </li>
 
 
           {role === "admin" && (
@@ -149,7 +149,7 @@ export default function Sidebar({ role, open, onClose }: Props) {
           Role
         </p>
         <p className="text-xs font-bold text-white/80 px-4 uppercase">
-          {role}
+          {role.replace(/_/g, " ")}
         </p>
       </div>
     </aside>
