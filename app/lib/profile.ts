@@ -29,7 +29,7 @@ export async function getMyProfile(): Promise<UserProfile | null> {
   }
 
   const { data: campusRow, error: campusErr } = await supabase
-    .from("campuses")
+    .from("colleges")
     .select("name")
     .eq("id", data.campus_id)
     .maybeSingle()

@@ -11,7 +11,7 @@ export default function StatsCards({ points }: { points?: number }) {
     const pts = typeof points === 'number' ? points : 0
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard label="Total Points" value={`${pts}`} />
+            {/* <StatCard label="Total Points" value={`${pts}`} /> */}
             <StatCard label="Campus Rank" value="#—" />
             <StatCard label="Kerala Rank" value="#—" />
         </div>

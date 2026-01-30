@@ -1,6 +1,8 @@
 
 "use client"
 
+import React from "react"
+
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -27,11 +29,11 @@ type Props = {
 export default function Sidebar({ role, open, onClose }: Props) {
   const pathname = usePathname()
 
-  const getLinkStyle = (href: string) => {
+  const getLinkStyle = React.useCallback((href: string) => {
     const isActive = pathname === href
-    return `group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 ${isActive ? "text-white font-semibold bg-white/5" : "text-white/70"
-      }`
-  }
+    // Prefer animating only color/opacity instead of `transition-all` which forces expensive layout/paint work
+    return `group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 hover:bg-white/10 ${isActive ? "text-white font-semibold bg-white/5" : "text-white/70"}`
+  }, [pathname])
 
   return (
     <aside

@@ -12,7 +12,8 @@ export async function POST(req: Request) {
 
     // On success, createServerClient will set auth cookies via the cookie helper
     return NextResponse.json({ session: data.session ?? null })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 })
+  } catch (err: unknown) {
+    const e = err as { message?: string }
+    return NextResponse.json({ error: e.message ?? "Server error" }, { status: 500 })
   }
 }

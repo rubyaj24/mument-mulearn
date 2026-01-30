@@ -51,12 +51,10 @@ export interface Database {
                     name: string
                 }
             }
-            campuses: {
+            colleges: {
                 Row: {
                     id: string
                     name: string
-                    district: string
-                    user_id: string | null
                     created_at: string | null
                 }
             }

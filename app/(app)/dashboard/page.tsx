@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
       <StatsCards points={points} />
 
-      <div className="flex flex-col gap-4">
+      {/* <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold text-black">Quick Actions</h1>
         <div className="flex gap-4">
         <RoleGate role={role} allow={['buddy', 'campus_coordinator', 'admin']}>
@@ -45,6 +45,9 @@ export default async function DashboardPage() {
           </button>
         </RoleGate>
         </div>
+      </div> */}
+      <div>
+        <h1 className="text-2xl font-bold text-black">Team details</h1>
       </div>
 
     </div>

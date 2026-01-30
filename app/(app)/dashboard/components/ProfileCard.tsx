@@ -1,7 +1,6 @@
 import { UserProfile } from "@/types/user"
 
 export default function ProfileCard({ profile }: { profile: UserProfile }) {
-    console.log("ProfileCard profile:", profile)
     return (
         <div className="relative bg-brand-blue rounded-3xl p-8 text-white overflow-hidden shadow-xl">
 
@@ -26,7 +25,7 @@ export default function ProfileCard({ profile }: { profile: UserProfile }) {
                     </h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm text-white/80">
-                        <div><b>Campus:</b> {profile.campus_id || "Not Assigned"}</div>
+                        <div><b>Campus:</b> {profile.campus_name || "Not Assigned"}</div>
                         <div><b>District:</b> {profile.district_name || "Not Assigned"}</div>
                     </div>
 
