@@ -11,9 +11,8 @@ export interface UserProfile {
   id: string
   full_name: string
   role: Role
-  district_id: string
+  district_id?: string | null
   district_name?: string | undefined
-  campus_id?: string
+  campus_id?: string | null
   campus_name?: string | undefined
-  created_at?: string
 }

@@ -1,11 +1,30 @@
 
-import { Menu } from "lucide-react"
+"use client"
+
+import { Menu, LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ToastProvider"
 
 export default function DashboardHeader({
     onMenuClick,
 }: {
     onMenuClick: () => void
 }) {
+    const router = useRouter()
+    const { show } = useToast()
+
+    async function handleSignOut() {
+        try {
+            const res = await fetch('/api/auth/signout', { method: 'POST' })
+            if (!res.ok) throw new Error('Sign out failed')
+            show({ title: 'Signed out', description: 'You have been signed out.' })
+            router.replace('/login')
+        } catch (err: unknown) {
+            const e = err as { message?: string }
+            show({ title: 'Error', description: e?.message || 'Sign out failed' })
+        }
+    }
+
     return (
         <header className="relative space-y-2">
 
@@ -29,19 +48,24 @@ export default function DashboardHeader({
                     </div>
                 </div>
 
-                {/* Right: date */}
-                <p className="text-sm text-slate-400 hidden sm:block">
-                    {new Date().toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                    })}
-                </p>
+                {/* Right: date + sign out */}
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-slate-400 hidden sm:block">
+                      {new Date().toLocaleDateString("en-US", {
+                          weekday: "long",
+                          month: "long",
+                          day: "numeric",
+                      })}
+                  </p>
+                  <button onClick={handleSignOut} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+                    <LogOut size={16} /> Sign out
+                  </button>
+                </div>
             </div>
 
             {/* Divider */}
             <div className="pt-2">
-                <div className="h-px w-full bg-gradient-to-r from-brand-blue/40 via-brand-yellow/60 to-transparent" />
+                <div className="h-px w-full bg-linear-to-r from-brand-blue/40 via-brand-yellow/60 to-transparent" />
             </div>
         </header>
     )

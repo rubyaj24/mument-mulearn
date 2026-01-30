@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/server"
 import { UserProfile } from "@/types/user"
 
 export async function getMyProfile(): Promise<UserProfile | null> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const {
     data: { user },
@@ -16,6 +16,27 @@ export async function getMyProfile(): Promise<UserProfile | null> {
     .eq("id", user.id)
     .single()
 
-  if (error) return null
-  return data as UserProfile
+  if (error || !data) return null
+
+  const { data: districtRow, error: districtErr } = await supabase
+    .from("districts")
+    .select("name")
+    .eq("id", data.district_id)
+    .maybeSingle()
+
+  if (districtErr) {
+    console.error("Error fetching district name:", districtErr)
+  }
+
+  const { data: campusRow, error: campusErr } = await supabase
+    .from("campuses")
+    .select("name")
+    .eq("id", data.campus_id)
+    .maybeSingle()
+
+  if (campusErr) {
+    console.error("Error fetching campus name:", campusErr)
+  }
+
+  return { ...(data as UserProfile), district_name: districtRow?.name ?? undefined, campus_name: campusRow?.name ?? undefined }
 }

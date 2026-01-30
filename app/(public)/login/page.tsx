@@ -1,9 +1,11 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ToastProvider"
+import ConditionsModal from "@/components/ConditionsModal"
 import { Eye, EyeClosed } from "lucide-react"
 
 export default function LoginPage() {
@@ -14,9 +16,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  const { show } = useToast()
+  const [showConditions, setShowConditions] = useState(false)
 
-  const redirectToDashboard = () => router.replace("/dashboard")
+  const redirectToDashboard = useCallback(() => router.replace("/dashboard"), [router])
 
   // If already logged in, skip login page
   useEffect(() => {
@@ -25,56 +29,80 @@ export default function LoginPage() {
       if (data.session) redirectToDashboard()
     }
     checkSession()
-  }, [])
+  }, [redirectToDashboard, supabase.auth])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    function mapAuthError(err: any) {
-      const msg = (err?.message || "").toString().toLowerCase()
-      const status = err?.status
+    type ErrLike = { message?: string; status?: number }
+    function mapAuthError(err: unknown) {
+      const e = err as ErrLike
+      const msg = (e?.message || "").toString().toLowerCase()
+      const status = e?.status
 
       if (typeof navigator !== "undefined" && !navigator.onLine) return "No internet connection. Please check your network."
-      if (status >= 500) return "Server error — please try again later."
+      if (typeof status === "number" && status >= 500) return "Server error — please try again later."
       if (msg.includes("invalid") || msg.includes("invalid login") || msg.includes("invalid password") || msg.includes("incorrect") || msg.includes("wrong")) return "Incorrect email or password."
       if (msg.includes("user") && msg.includes("not found") || msg.includes("not registered") || msg.includes("no user")) return "Account not found. Please sign up."
       if (msg.includes("password")) return "Incorrect password."
-      return err?.message || "An unexpected error occurred. Please try again."
+      return e?.message || "An unexpected error occurred. Please try again."
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const body = await res.json().catch(() => ({}))
 
-      if (error) {
-        const friendly = mapAuthError(error)
+      if (!res.ok) {
+        const friendly = mapAuthError({ message: body?.error, status: res.status })
         setError(friendly)
+        show({ title: "Login failed", description: friendly })
         setLoading(false)
         return
       }
 
-      // success
-      if (data?.session) {
-        redirectToDashboard()
+      // success — server set cookies so server-side auth will work
+      const seen = typeof window !== "undefined" ? sessionStorage.getItem("conditions_shown") : null
+      if (!seen) {
+        setShowConditions(true)
+        show({ title: "Signed in", description: "Welcome — please review the rules." })
         return
       }
 
-      // fallback
+      show({ title: "Signed in", description: "Redirecting to dashboard..." })
       redirectToDashboard()
-    } catch (err: any) {
+      return
+    } catch (err: unknown) {
       console.error("Login error:", err)
       if (err instanceof Error) {
         if (err.message.includes("Failed to fetch")) setError("Network error. Check your connection and try again.")
         else setError(err.message)
+        show({ title: "Login failed", description: (err.message || "An unexpected error occurred.") })
       } else {
-        setError("An unexpected error occurred. Please try again.")
+        const e = err as ErrLike
+        setError(e?.message || "An unexpected error occurred. Please try again.")
+        show({ title: "Login failed", description: e?.message || "An unexpected error occurred. Please try again." })
       }
     } finally {
       setLoading(false)
     }
   }
-  return (
+    function handleCloseConditions() {
+      try {
+        if (typeof window !== "undefined") sessionStorage.setItem("conditions_shown", "1")
+      } finally {
+        setShowConditions(false)
+        redirectToDashboard()
+      }
+    }
+
+    return (
+    <>
     <div className="min-h-[70vh] flex items-center justify-center p-6">
       <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
 
@@ -165,5 +193,7 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+      <ConditionsModal open={showConditions} onClose={handleCloseConditions} />
+    </>
+    )
 }

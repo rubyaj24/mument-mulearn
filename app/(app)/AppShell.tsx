@@ -3,6 +3,7 @@
 import { ReactNode, useState } from "react"
 import Sidebar from "@/components/layout/Sidebar"
 import DashboardHeader from "@/components/layout/DashboardHeader"
+import ToastProvider from "@/components/ToastProvider"
 import { Role } from "@/types/user"
 
 export default function AppShell({
@@ -41,7 +42,9 @@ export default function AppShell({
                 </div>
 
                 <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-                    {children}
+                    <ToastProvider>
+                        {children}
+                    </ToastProvider>
                 </main>
             </div>
         </div>

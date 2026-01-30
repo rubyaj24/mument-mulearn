@@ -1,41 +1,34 @@
 import RoleGate from "@/components/layout/RoleGate"
-import { createClient } from "@/lib/supabase/server"
 import { UserProfile } from "@/types/user"
 import ProfileCard from "./components/ProfileCard"
 import StatsCards from "./components/StatsCards"
-import { getDistrictName } from "@/lib/district"
+import { getMyProfile } from "@/lib/profile"
+import DashboardWelcome from "@/components/DashboardWelcome"
+import { getUserPoints } from "@/lib/points"
 
 
 
 export default async function DashboardPage() {
-  const supabaseServer = await createClient()
-
-  const { data: { user } } = await supabaseServer.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabaseServer
-    .from("profiles")
-    .select("id, full_name, role, district_id, campus_id, created_at")
-    .eq("id", user.id)
-    .single()
-
+  const profile = await getMyProfile()
   if (!profile) return null
 
   const typedProfile = profile as UserProfile
   const role = typedProfile.role
-
-  const districtName = await getDistrictName(supabaseServer, typedProfile.district_id)
-  console.log("District Name:", districtName)
-  const typedProfileWithDistrict = { ...typedProfile, district_name: districtName ?? undefined }
+  const points = await getUserPoints(typedProfile.id)
 
   return (
+    <>
     <div className="space-y-6">
 
-      <ProfileCard profile={typedProfileWithDistrict} />
+      <DashboardWelcome profile={typedProfile} />
 
-      <StatsCards />
+      <ProfileCard profile={typedProfile} />
 
-      <div className="flex gap-4">
+      <StatsCards points={points} />
+
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl font-bold text-black">Quick Actions</h1>
+        <div className="flex gap-4">
         <RoleGate role={role} allow={['buddy', 'campus_coordinator', 'admin']}>
           <button className="bg-brand-blue text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:brightness-110 transition-all">
             Create Checkpoint
@@ -46,9 +39,17 @@ export default async function DashboardPage() {
             Feedback Inbox
           </button>
         </RoleGate>
+        <RoleGate role={role} allow={['admin']}>
+          <button className="bg-red-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:bg-red-500 transition-all">
+            Admin Panel
+          </button>
+        </RoleGate>
+        </div>
       </div>
 
     </div>
+    </>
+
   )
 }
 

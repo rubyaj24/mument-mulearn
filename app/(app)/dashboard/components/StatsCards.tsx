@@ -7,12 +7,13 @@ function StatCard({ label, value }: { label: string; value: string }) {
     )
 }
 
-export default function StatsCards() {
+export default function StatsCards({ points }: { points?: number }) {
+    const pts = typeof points === 'number' ? points : 0
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard label="Total Points" value="1000" />
-            <StatCard label="Campus Rank" value="#12" />
-            <StatCard label="Kerala Rank" value="#50" />
+            <StatCard label="Total Points" value={`${pts}`} />
+            <StatCard label="Campus Rank" value="#—" />
+            <StatCard label="Kerala Rank" value="#—" />
         </div>
     )
 }

@@ -30,14 +30,14 @@ export default function ProfileCard({ profile }: { profile: UserProfile }) {
                         <div><b>District:</b> {profile.district_name || "Not Assigned"}</div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-2">
+                    {/* <div className="flex flex-wrap gap-2 pt-2">
                         <span className="bg-white text-brand-blue px-4 py-1 rounded-full text-xs font-bold">
                             Member since{" "}
                             {profile.created_at
                                 ? new Date(profile.created_at).getFullYear()
                                 : "N/A"}
                         </span>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>

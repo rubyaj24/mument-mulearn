@@ -124,14 +124,13 @@ export default function Sidebar({ role, open, onClose }: Props) {
             </li>
           )}
 
-          {permissions.canCreateAnnouncements(role) && (
             <li>
               <Link href="/announcements" className={getLinkStyle("/announcements")} onClick={onClose}>
                 <Megaphone size={20} />
                 Announcements
               </Link>
             </li>
-          )}
+
 
           {role === "admin" && (
             <li>
