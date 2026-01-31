@@ -3,10 +3,10 @@
 import { useState, useTransition, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AdminUserView } from "@/lib/admin"
-import { updateUserRoleAction } from "@/actions"
 import { Role } from "@/types/user"
-import { Search, Loader2, X, Filter } from "lucide-react"
+import { Search, Loader2, X, Filter, Edit2 } from "lucide-react"
 import SearchableSelect from "./SearchableSelect"
+import EditUserDialog from "./EditUserDialog"
 
 interface Props {
     users: AdminUserView[]
@@ -16,13 +16,13 @@ interface Props {
     totalPages: number
 }
 
-const ROLES: Role[] = ["participant", "buddy", "campus_coordinator", "qa_foreman", "qa_watcher", "admin"]
+const ROLES: Role[] = ["participant", "buddy", "campus_coordinator", "qa_foreman", "qa_watcher", "zonal_lead", "admin"]
 
 export default function UserManagementTable({ users, districts, campuses, currentPage, totalPages }: Props) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
-    const [updatingId, setUpdatingId] = useState<string | null>(null)
+    const [editingUser, setEditingUser] = useState<AdminUserView | null>(null)
 
     // Local state for debounced search
     const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
@@ -58,17 +58,6 @@ export default function UserManagementTable({ users, districts, campuses, curren
         })
     }
 
-    const handleRoleUpdate = async (userId: string, newRole: Role) => {
-        setUpdatingId(userId)
-        try {
-            await updateUserRoleAction(userId, newRole)
-        } catch (error) {
-            alert("Failed to update role")
-        } finally {
-            setUpdatingId(null)
-        }
-    }
-
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams(searchParams)
         params.set("page", newPage.toString())
@@ -77,7 +66,7 @@ export default function UserManagementTable({ users, districts, campuses, curren
         })
     }
 
-    const hasFilters = searchParams.toString().length > 0 && searchParams.get("page") !== "1" // Simplified check
+    const hasFilters = searchParams.toString().length > 0 && searchParams.get("page") !== "1"
 
     return (
         <div className="space-y-6">
@@ -147,7 +136,7 @@ export default function UserManagementTable({ users, districts, campuses, curren
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Role</th>
                                 <th className="px-6 py-4">Campus / District</th>
-                                <th className="px-6 py-4">Joined</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -170,34 +159,25 @@ export default function UserManagementTable({ users, districts, campuses, curren
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {updatingId === user.id ? (
-                                                <div className="flex items-center gap-2 text-brand-blue text-xs font-medium">
-                                                    <Loader2 size={14} className="animate-spin" /> Saving...
-                                                </div>
-                                            ) : (
-                                                <select
-                                                    className={`p-1.5 pr-8 rounded-lg border border-transparent hover:border-gray-200 bg-transparent hover:bg-white text-xs font-bold uppercase tracking-wide cursor-pointer focus:ring-2 focus:ring-brand-blue/20 transition-all
-                                                        ${user.role === 'admin' ? 'text-purple-600 bg-purple-50 hover:bg-purple-100' :
-                                                            user.role === 'buddy' ? 'text-orange-600 bg-orange-50 hover:bg-orange-100' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}
-                                                    value={user.role}
-                                                    onChange={(e) => handleRoleUpdate(user.id, e.target.value as Role)}
-                                                >
-                                                    {ROLES.map(r => (
-                                                        <option key={r} value={r}>{r}</option>
-                                                    ))}
-                                                </select>
-                                            )}
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide
+                                                ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                                                    user.role === 'buddy' ? 'bg-orange-100 text-orange-800' :
+                                                        'bg-slate-100 text-slate-800'}`}>
+                                                {user.role}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-slate-700 font-medium">{user.campus_name || <span className="text-slate-400 italic">No Campus</span>}</div>
                                             <div className="text-xs text-slate-500">{user.district_name || "No District"}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-500">
-                                            {new Date(user.created_at || "").toLocaleDateString(undefined, {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            })}
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => setEditingUser(user)}
+                                                className="text-slate-400 hover:text-brand-blue p-2 hover:bg-brand-blue/5 rounded-lg transition-colors"
+                                                title="Edit User"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -237,6 +217,20 @@ export default function UserManagementTable({ users, districts, campuses, curren
                     </div>
                 )}
             </div>
+
+            {/* Edit Dialog */}
+            {editingUser && (
+                <EditUserDialog
+                    user={{
+                        ...editingUser,
+                        email: editingUser.email || null
+                    }}
+                    isOpen={!!editingUser}
+                    onClose={() => setEditingUser(null)}
+                    districts={districts}
+                    campuses={campuses}
+                />
+            )}
         </div>
     )
 }

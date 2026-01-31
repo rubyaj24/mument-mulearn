@@ -1,5 +1,6 @@
 import { getFeedbackInbox } from "@/lib/feedback"
 import { Inbox, User, Tag, MapPin, Mail } from "lucide-react"
+import FeedbackStatusSelect from "./components/FeedbackStatusSelect"
 
 export default async function FeedbackInboxPage() {
     const feedback = await getFeedbackInbox()
@@ -25,10 +26,9 @@ export default async function FeedbackInboxPage() {
                             {/* Header: Status, Category, Date */}
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md tracking-wide ${f.status === 'new' ? 'bg-blue-50 text-brand-blue border border-blue-100' : 'bg-gray-100 text-gray-600'
-                                        }`}>
-                                        {f.status || 'NEW'}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <FeedbackStatusSelect id={f.id} currentStatus={f.status} />
+                                    </div>
                                     <span className="text-xs text-slate-500 px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100 flex items-center gap-1">
                                         <Tag size={10} /> {f.category}
                                     </span>

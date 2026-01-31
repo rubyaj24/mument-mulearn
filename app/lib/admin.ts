@@ -27,7 +27,7 @@ export async function getUsers(filters: UserFilters = {}, limit = 50, offset = 0
     const supabase = await createClient()
 
     let query = supabase.from("profiles").select(`
-        id, full_name, role, district_id, campus_id, created_at,
+        id, full_name, role, email, district_id, campus_id, created_at,
         districts ( name ),
         colleges ( name )
     `, { count: "estimated" })

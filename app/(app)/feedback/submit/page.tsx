@@ -3,6 +3,8 @@
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ToastProvider"
+import Link from "next/link"
+import { List } from "lucide-react"
 
 export default function FeedbackSubmitPage() {
     const router = useRouter()
@@ -39,7 +41,7 @@ export default function FeedbackSubmitPage() {
 
             show({ title: "Feedback submitted", description: "Thanks for your input!" })
             // navigate after a short delay so user sees toast
-            setTimeout(() => router.push("/dashboard"), 700)
+            setTimeout(() => router.push("/app/feedback/my-feedback"), 700)
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err)
             show({ title: "Error", description: message })
@@ -50,12 +52,26 @@ export default function FeedbackSubmitPage() {
 
     return (
         <div className="max-w-2xl mx-auto py-8 px-6">
-            <header className="mb-8">
-                <h1 className="text-2xl font-bold text-brand-blue">Submit Feedback</h1>
-                <p className="text-sm text-slate-500">Share your thoughts, report issues, or suggest improvements.</p>
-            </header>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 space-y-6">
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 space-y-6">
+
+                {/* Header inside the card */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                    <div>
+                        <h1 className="text-2xl font-bold text-brand-blue">Submit Feedback</h1>
+                        <p className="text-sm text-slate-500 mt-1">Share your thoughts, report issues, or suggest improvements.</p>
+                    </div>
+                    <Link
+                        href="/feedback/my-feedback"
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-brand-blue font-semibold rounded-lg hover:bg-slate-100 transition-colors text-sm w-fit border border-brand-blue/10"
+                    >
+                        <List size={16} />
+                        My Feedbacks
+                    </Link>
+                </div>
+
+                <hr className="border-slate-50" />
+
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Category</label>
                     <select name="category" defaultValue="general" className="w-full p-3 rounded-xl border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">

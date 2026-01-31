@@ -59,3 +59,35 @@ export async function updateUserRoleAction(userId: string, newRole: Role) {
 
     revalidatePath("/admin")
 }
+
+import { updateFeedbackStatus } from "@/lib/feedback"
+
+export async function updateFeedbackStatusAction(id: string, status: string) {
+    await updateFeedbackStatus(id, status)
+    revalidatePath("/feedback/inbox")
+    revalidatePath("/feedback/my-feedback")
+    revalidatePath("/feedback/my-feedback")
+}
+
+export async function updateUserProfileAction(userId: string, data: { role: Role; district_id: string; campus_id: string; email: string }) {
+    const supabase = await createClient()
+    const currentUser = await getMyProfile()
+
+    if (currentUser?.role !== "admin") {
+        throw new Error("Unauthorized")
+    }
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({
+            role: data.role,
+            district_id: data.district_id,
+            campus_id: data.campus_id || null, // Handle empty string as null
+            email: data.email
+        })
+        .eq("id", userId)
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+}

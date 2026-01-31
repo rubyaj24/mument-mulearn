@@ -90,3 +90,39 @@ export async function getFeedbackInbox() {
 
     return formattedData
 }
+
+export async function getMyFeedback() {
+    const supabase = await createClient()
+    const user = await getMyProfile()
+
+    if (!user) return []
+
+    const { data, error } = await supabase
+        .from("feedback")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false })
+
+    if (error) {
+        console.error("Error fetching my feedback:", error)
+        return []
+    }
+
+    return data as Feedback[]
+}
+
+export async function updateFeedbackStatus(id: string, status: string) {
+    const supabase = await createClient()
+    // Verify admin permission (optional strictly here if RLS handles it, but good for safety)
+    const user = await getMyProfile()
+    if (!user || !permissions.canViewFeedbackInbox(user.role)) {
+        throw new Error("Unauthorized")
+    }
+
+    const { error } = await supabase
+        .from("feedback")
+        .update({ status })
+        .eq("id", id)
+
+    if (error) throw error
+}

@@ -38,6 +38,8 @@ export default async function DashboardPage() {
 
         <StatsCards points={points} />
 
+
+
         {/* Admin Analytics Section */}
         <RoleGate role={role} allow={['admin']}>
           {statsProps && <AdminStats
@@ -60,4 +62,3 @@ export default async function DashboardPage() {
 
   )
 }
-
