@@ -14,8 +14,6 @@ export async function getCheckpoints() {
 
     if (!user) return []
 
-    // Optimized: Select only needed columns and Limit 50
-    // Currently picking all because UI uses many fields, but good practice to be explicit if table grows.
     let query = supabase.from("checkpoints").select("id, summary, week_number, scope, created_at, team_id, participant_id, buddy_id")
 
     // Admin sees everything
@@ -24,16 +22,11 @@ export async function getCheckpoints() {
     }
 
     // Role-based filtering logic
-    // ... (rest of filtering logic) ...
 
     const conditions: string[] = [`scope.eq.global`]
 
     if (user.campus_id) {
-        // ... (existing logic) ...
-        // For now, I will implement filtering for what IS there:
-        // - scope=team (linked via team_id)
-        // - scope=participant (linked via participant_id)
-        // - scope=global
+        // Additional filtering logic can be added here if schema supports direct campus linking
     }
 
     // ... (logic to get teamIds) ...
@@ -65,7 +58,6 @@ export async function getCheckpoints() {
 
     query = query.or(orParts.join(","))
 
-    // Added LIMIT 50 for performance optimization
     const { data, error } = await query.order("created_at", { ascending: false }).limit(50)
 
     if (error) {
@@ -98,4 +90,29 @@ export async function createCheckpoint(data: {
 
     const { error } = await supabase.from("checkpoints").insert(payload)
     if (error) throw error
+}
+
+export async function getBuddyTeams(userId: string) {
+    const supabase = await createClient()
+
+    // Fetch teams where user is a member
+    const { data: members, error: memberError } = await supabase
+        .from("team_members")
+        .select("team_id")
+        .eq("user_id", userId)
+
+    if (memberError || !members || members.length === 0) return []
+
+    const teamIds = members.map((m: { team_id: string }) => m.team_id)
+
+    const { data: teams, error: teamError } = await supabase
+        .from("teams")
+        .select("id, team_name")
+        .in("id", teamIds)
+
+    if (teamError) return []
+
+    // Map to a simpler structure or return as is. 
+    // Returning {id, team_name}
+    return teams
 }

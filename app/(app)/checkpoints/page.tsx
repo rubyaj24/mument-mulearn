@@ -1,9 +1,21 @@
-import { getCheckpoints } from "@/lib/checkpoints"
-// import { CheckpointList } from "./components/CheckpointList" // Assuming we might refactor to components later, but for now inline is fine or create new.
+import { getCheckpoints, getBuddyTeams } from "@/lib/checkpoints"
+// import { CheckpointList } from "./components/CheckpointList" 
 import { Calendar, User, Users } from "lucide-react"
 
+import { permissions } from "@/lib/permissions"
+import { getMyProfile } from "@/lib/profile"
+import { Role } from "@/types/user"
+import CreateCheckpoint from "./components/CreateCheckpoint"
+
 export default async function CheckpointsPage() {
+    const user = await getMyProfile()
+    const role = (user?.role || "participant") as Role
     const checkpoints = await getCheckpoints()
+
+    let buddyTeams: { id: string, team_name: string }[] = []
+    if (user && role === "buddy") {
+        buddyTeams = await getBuddyTeams(user.id)
+    }
 
     return (
         <div className="py-8 px-6">
@@ -12,7 +24,8 @@ export default async function CheckpointsPage() {
                     <h1 className="text-2xl font-bold text-brand-blue">Checkpoints</h1>
                     <p className="text-sm text-slate-500">Your assigned checkpoints and tasks</p>
                 </div>
-                {/* <CreateCheckpointButton /> - To be implemented for Coordinators/Buddies */}
+                {/* Only Buddies can create checkpoints now (as per new rules) */}
+                {permissions.canCreateCheckpoints(role) && <CreateCheckpoint availableTeams={buddyTeams} />}
             </header>
 
             {checkpoints.length === 0 ? (

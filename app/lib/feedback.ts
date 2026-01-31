@@ -5,6 +5,16 @@ import { Database } from "@/types/database.types"
 
 export type Feedback = Database["public"]["Tables"]["feedback"]["Row"]
 
+export type FeedbackView = Feedback & {
+    profiles: {
+        full_name: string
+        email: string | null
+    } | null
+    colleges: {
+        name: string
+    } | null
+}
+
 export async function submitFeedback(data: {
     subject: string
     description: string
@@ -34,16 +44,13 @@ export async function getFeedbackInbox() {
         return []
     }
 
-    // Optimized: Limit 50 items
-    // Selecting specific columns is good, but for inbox we need most of them.
-    // Keeping * for now as schema is still in flux/mocked, but adding limit is crucial.
+    // 1. Fetch Feedback raw (No joins to avoid FK issues)
     let query = supabase.from("feedback").select("*").order("created_at", { ascending: false }).limit(50)
 
-    // Role-based filtering
     if (permissions.canViewAllFeedback(user.role)) {
-        // Watcher, Zonal Lead, Admin -> See ALL (Limited to 50 recent)
+        // No filter
     } else if (permissions.canViewGroupedFeedback(user.role)) {
-        // Foreman logic (placeholder)
+        // Add group logic if needed
     } else if (user.role === "campus_coordinator") {
         if (user.campus_id) {
             query = query.eq("campus_id", user.campus_id)
@@ -52,12 +59,34 @@ export async function getFeedbackInbox() {
         }
     }
 
-    const { data, error } = await query
+    const { data: feedbackData, error } = await query
 
     if (error) {
         console.error("Error fetching feedback:", error)
         return []
     }
 
-    return data as Feedback[]
+    if (!feedbackData || feedbackData.length === 0) return []
+
+    // 2. Collect IDs
+    const userIds = Array.from(new Set(feedbackData.map((f: any) => f.created_by).filter(Boolean)))
+    const campusIds = Array.from(new Set(feedbackData.map((f: any) => f.campus_id).filter(Boolean)))
+
+    // 3. Fetch Linked Data in Parallel
+    const [profilesResult, collegesResult] = await Promise.all([
+        supabase.from("profiles").select("id, full_name").in("id", userIds),
+        supabase.from("colleges").select("id, name").in("id", campusIds)
+    ])
+
+    const profileMap = new Map(profilesResult.data?.map((p: any) => [p.id, p]) || [])
+    const collegeMap = new Map(collegesResult.data?.map((c: any) => [c.id, c]) || [])
+
+    // 4. Combine Data
+    const formattedData: FeedbackView[] = feedbackData.map((f: any) => ({
+        ...f,
+        profiles: profileMap.get(f.created_by) || null,
+        colleges: f.campus_id ? collegeMap.get(f.campus_id) : null
+    }))
+
+    return formattedData
 }

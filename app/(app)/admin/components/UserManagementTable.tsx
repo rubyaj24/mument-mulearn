@@ -1,0 +1,242 @@
+"use client"
+
+import { useState, useTransition, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { AdminUserView } from "@/lib/admin"
+import { updateUserRoleAction } from "@/actions"
+import { Role } from "@/types/user"
+import { Search, Loader2, X, Filter } from "lucide-react"
+import SearchableSelect from "./SearchableSelect"
+
+interface Props {
+    users: AdminUserView[]
+    districts: { id: string, name: string }[]
+    campuses: { id: string, name: string }[]
+    currentPage: number
+    totalPages: number
+}
+
+const ROLES: Role[] = ["participant", "buddy", "campus_coordinator", "qa_foreman", "qa_watcher", "admin"]
+
+export default function UserManagementTable({ users, districts, campuses, currentPage, totalPages }: Props) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const [isPending, startTransition] = useTransition()
+    const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+    // Local state for debounced search
+    const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
+
+    // Debounce Search Effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchTerm !== (searchParams.get("search") || "")) {
+                handleFilterChange("search", searchTerm)
+            }
+        }, 300)
+
+        return () => clearTimeout(timer)
+    }, [searchTerm])
+
+    const handleFilterChange = (key: string, value: string) => {
+        const params = new URLSearchParams(searchParams)
+        if (value && value !== "all") {
+            params.set(key, value)
+        } else {
+            params.delete(key)
+        }
+        params.set("page", "1") // Reset to page 1
+        startTransition(() => {
+            router.replace(`/admin?${params.toString()}`)
+        })
+    }
+
+    const clearFilters = () => {
+        setSearchTerm("")
+        startTransition(() => {
+            router.replace("/admin")
+        })
+    }
+
+    const handleRoleUpdate = async (userId: string, newRole: Role) => {
+        setUpdatingId(userId)
+        try {
+            await updateUserRoleAction(userId, newRole)
+        } catch (error) {
+            alert("Failed to update role")
+        } finally {
+            setUpdatingId(null)
+        }
+    }
+
+    const handlePageChange = (newPage: number) => {
+        const params = new URLSearchParams(searchParams)
+        params.set("page", newPage.toString())
+        startTransition(() => {
+            router.replace(`/admin?${params.toString()}`)
+        })
+    }
+
+    const hasFilters = searchParams.toString().length > 0 && searchParams.get("page") !== "1" // Simplified check
+
+    return (
+        <div className="space-y-6">
+            {/* Modern Filter Bar */}
+            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:gap-4">
+
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Search by name..."
+                        className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 bg-gray-50/50 focus:bg-white transition-all"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+
+                {/* Filters Group */}
+                <div className="flex flex-col md:flex-row gap-3 md:items-center">
+                    <div className="w-full md:w-40">
+                        <SearchableSelect
+                            options={ROLES.map(r => ({ id: r, name: r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ') }))}
+                            value={searchParams.get("role") || "all"}
+                            onChange={(val) => handleFilterChange("role", val)}
+                            placeholder="All Roles"
+                        />
+                    </div>
+
+                    <div className="w-full md:w-48">
+                        <SearchableSelect
+                            options={districts}
+                            value={searchParams.get("district_id") || "all"}
+                            onChange={(val) => handleFilterChange("district_id", val)}
+                            placeholder="All Districts"
+                        />
+                    </div>
+
+                    <div className="w-full md:w-64">
+                        <SearchableSelect
+                            options={campuses}
+                            value={searchParams.get("campus_id") || "all"}
+                            onChange={(val) => handleFilterChange("campus_id", val)}
+                            placeholder="All Campuses"
+                        />
+                    </div>
+
+                    {/* Clear Button */}
+                    {hasFilters || searchTerm ? (
+                        <button
+                            onClick={clearFilters}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                            title="Clear Filters"
+                        >
+                            <X size={20} />
+                        </button>
+                    ) : null}
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50/50 text-gray-500 font-medium border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4">User</th>
+                                <th className="px-6 py-4">Role</th>
+                                <th className="px-6 py-4">Campus / District</th>
+                                <th className="px-6 py-4">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {users.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-400 flex flex-col items-center justify-center gap-2">
+                                        <Filter size={32} className="opacity-20" />
+                                        <p>No users found matching these filters.</p>
+                                        <button onClick={clearFilters} className="text-brand-blue hover:underline text-xs">Clear all filters</button>
+                                    </td>
+                                </tr>
+                            ) : (
+                                users.map(user => (
+                                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="font-semibold text-slate-800">{user.full_name}</div>
+                                            {user.email && <div className="text-xs text-slate-500 mb-0.5">{user.email}</div>}
+                                            <div className="text-xs text-slate-400 font-mono opacity-60 group-hover:opacity-100 transition-opacity">
+                                                {user.id.slice(0, 8)}...
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {updatingId === user.id ? (
+                                                <div className="flex items-center gap-2 text-brand-blue text-xs font-medium">
+                                                    <Loader2 size={14} className="animate-spin" /> Saving...
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    className={`p-1.5 pr-8 rounded-lg border border-transparent hover:border-gray-200 bg-transparent hover:bg-white text-xs font-bold uppercase tracking-wide cursor-pointer focus:ring-2 focus:ring-brand-blue/20 transition-all
+                                                        ${user.role === 'admin' ? 'text-purple-600 bg-purple-50 hover:bg-purple-100' :
+                                                            user.role === 'buddy' ? 'text-orange-600 bg-orange-50 hover:bg-orange-100' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}
+                                                    value={user.role}
+                                                    onChange={(e) => handleRoleUpdate(user.id, e.target.value as Role)}
+                                                >
+                                                    {ROLES.map(r => (
+                                                        <option key={r} value={r}>{r}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-700 font-medium">{user.campus_name || <span className="text-slate-400 italic">No Campus</span>}</div>
+                                            <div className="text-xs text-slate-500">{user.district_name || "No District"}</div>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500">
+                                            {new Date(user.created_at || "").toLocaleDateString(undefined, {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            })}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination Footer */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50/30">
+                        <button
+                            disabled={currentPage <= 1 || isPending}
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-colors shadow-sm"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm text-slate-500 font-medium px-3 py-1 bg-gray-100 rounded-lg">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            disabled={currentPage >= totalPages || isPending}
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-colors shadow-sm"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
+
+                {isPending && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                        <div className="bg-white p-3 rounded-2xl shadow-xl border border-gray-100">
+                            <Loader2 className="animate-spin text-brand-blue" size={24} />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}

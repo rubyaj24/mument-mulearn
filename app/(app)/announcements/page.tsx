@@ -1,7 +1,13 @@
 import { getAnnouncements } from "@/lib/announcements"
 import { Megaphone, Calendar } from "lucide-react"
+import CreateAnnouncement from "./components/CreateAnnouncement"
+import { getMyProfile } from "@/lib/profile"
+import { permissions } from "@/lib/permissions"
+import { Role } from "@/types/user"
 
 export default async function AnnouncementsPage() {
+    const user = await getMyProfile()
+    const role = (user?.role || "participant") as Role
     const announcements = await getAnnouncements()
 
     return (
@@ -11,6 +17,7 @@ export default async function AnnouncementsPage() {
                     <h1 className="text-2xl font-bold text-brand-blue">Announcements</h1>
                     <p className="text-sm text-slate-500">Updates and notifications</p>
                 </div>
+                {permissions.canCreateAnnouncements(role) && <CreateAnnouncement />}
             </header>
 
             {announcements.length === 0 ? (
