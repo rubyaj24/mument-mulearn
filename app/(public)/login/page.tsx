@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ToastProvider"
 import ConditionsModal from "@/components/ConditionsModal"
 import LoginForm from "./components/LoginForm"
+import Silk from "@/components/Silk"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -50,7 +51,16 @@ export default function LoginPage() {
 
     return (
     <>
-    <div className="min-h-[70vh] flex items-center justify-center p-6">
+    <div className="h-screen flex items-center justify-center p-6">
+      <div className="absolute inset-0">
+        <Silk
+          speed={5}
+          scale={1}
+          color="#2e85fe"
+          noiseIntensity={1.5}
+          rotation={0}
+        />
+      </div>
       <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
 
         {/* Illustration - shown on md+ as a visually-rich panel */}

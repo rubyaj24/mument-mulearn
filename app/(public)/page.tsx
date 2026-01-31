@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function LandingPage() {
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
+    <div className="relative w-full h-full bg-black overflow-hidden">
       <div className="absolute inset-0">
         <Silk
           speed={5}
@@ -16,7 +16,7 @@ export default function LandingPage() {
         />
       </div>
 
-      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-auto">
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-auto p-6 gap-10">
         <Image
           src="/logo_white.png"
           alt="Mument Logo"
@@ -24,8 +24,13 @@ export default function LandingPage() {
           height={100}
           className="object-contain"
         />
+        <div className='mx-20'>
+          <h1 className="text-white text-7xl lg:text-9xl font-black text-center mx-10">
+          where curiosity meets action
+        </h1>
+        </div>
         <button
-          className="absolute bottom-10 px-6 py-3 bg-white text-black font-semibold rounded-full shadow-lg hover:bg-gray-200 transition"
+          className="px-6 py-3 bg-white text-black font-semibold rounded-full shadow-lg hover:bg-gray-200 transition"
           onClick={() => {
             window.location.href = '/login';
           }}
@@ -33,6 +38,9 @@ export default function LandingPage() {
           Get Started
         </button>
       </div>
+      <footer className="absolute bottom-4 w-full text-center text-white text-sm z-10">
+        &copy; {new Date().getFullYear()} µment. All rights reserved.
+      </footer>
     </div>
   )
 }
