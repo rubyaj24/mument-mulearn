@@ -6,7 +6,7 @@ import React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { X } from "lucide-react"
+import { Send, X } from "lucide-react"
 import { Role } from "@/types/user"
 import { permissions } from "@/lib/permissions"
 import {
@@ -98,6 +98,13 @@ export default function Sidebar({ role, open, onClose }: Props) {
             <Link href="/checkpoints" className={getLinkStyle("/checkpoints")} onClick={onClose}>
               <MapPin size={20} />
               Checkpoints
+            </Link>
+          </li>
+
+          <li>
+            <Link href="/daily-forum" className={getLinkStyle("/daily-forum")} onClick={onClose}>
+              <Send size={20} />
+              Forum
             </Link>
           </li>
 
