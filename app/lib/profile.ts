@@ -40,3 +40,33 @@ export async function getMyProfile(): Promise<UserProfile | null> {
 
   return { ...(data as UserProfile), district_name: districtRow?.name ?? undefined, campus_name: campusRow?.name ?? undefined }
 }
+
+export async function getDistricts(): Promise<Array<{ id: string; name: string }>> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("districts")
+    .select("id, name")
+
+  if (error) {
+    console.error("Error fetching districts:", error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function getColleges(): Promise<Array<{ id: string; name: string }>> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("colleges")
+    .select("id, name")
+
+  if (error) {
+    console.error("Error fetching colleges:", error)
+    return []
+  }
+
+  return data || []
+}

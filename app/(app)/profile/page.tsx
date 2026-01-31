@@ -23,13 +23,13 @@ export default async function ProfilePage() {
           <span className="text-sm text-slate-500">
           Joined: {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "N/A"}
           </span>
-          {/* <span className="h-4 w-px bg-slate-200" /> */}
-          {/* <a
+          <span className="h-4 w-px bg-slate-200" />
+          <a
           href="/profile/edit"
           className="text-sm px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200"
           >
           Edit profile
-          </a> */}
+          </a>
         </div>
         </div>
       </div>
@@ -46,7 +46,7 @@ export default async function ProfilePage() {
         <div>
           <div className="text-xs text-slate-500">Contact</div>
           <div className="mt-1 font-medium">
-          {(profile as any).email ?? (profile as any).email_id ?? "Not provided"}
+          {(profile as { email?: string; email_id?: string }).email ?? (profile as { email?: string; email_id?: string }).email_id ?? "Not provided"}
           </div>
         </div>
 
