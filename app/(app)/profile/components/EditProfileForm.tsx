@@ -2,15 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserProfile } from '@/types/user';
+import { UserProfile, Role } from '@/types/user';
+import { permissions } from '@/lib/permissions';
 
 interface EditProfileFormProps {
   profile: UserProfile;
+  currentUserRole: Role | null | undefined;
   districts: Array<{ id: string; name: string }>;
   colleges: Array<{ id: string; name: string }>;
 }
 
-export default function EditProfileForm({ profile, districts, colleges }: EditProfileFormProps) {
+export default function EditProfileForm({ profile, currentUserRole, districts, colleges }: EditProfileFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +22,8 @@ export default function EditProfileForm({ profile, districts, colleges }: EditPr
     district_id: profile.district_id || '',
     campus_id: profile.campus_id || '',
   });
+
+  const canEditRole = currentUserRole && permissions.canOverridePermissions(currentUserRole);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -84,18 +88,20 @@ export default function EditProfileForm({ profile, districts, colleges }: EditPr
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Role
-            </label>
-            <input
-              type="text"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {canEditRole && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Role
+              </label>
+              <input
+                type="text"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
