@@ -73,8 +73,30 @@ export async function updateUserProfileAction(userId: string, data: { role: Role
     const supabase = await createClient()
     const currentUser = await getMyProfile()
 
-    if (currentUser?.role !== "admin") {
+    if (!currentUser || !["admin", "campus_coordinator"].includes(currentUser.role)) {
         throw new Error("Unauthorized")
+    }
+
+    // Role-specific constraints
+    if (currentUser.role === "campus_coordinator") {
+        if (!currentUser.campus_id) throw new Error("Account not linked to a campus")
+
+        // 1. Verify target user belongs to same campus
+        const { data: targetUser } = await supabase.from("profiles").select("campus_id").eq("id", userId).single()
+        if (!targetUser || targetUser.campus_id !== currentUser.campus_id) {
+            throw new Error("You can only edit users from your campus")
+        }
+
+        // 2. Enforce scope
+        data.campus_id = currentUser.campus_id
+        data.district_id = currentUser.district_id
+
+        // 3. Restrict role changes (Buddy/Participant only)
+        if (data.role !== "buddy" && data.role !== "participant") {
+            if (!["participant", "buddy"].includes(data.role)) {
+                throw new Error("Campus Coordinators can only assign Participant or Buddy roles")
+            }
+        }
     }
 
     const { error } = await supabase

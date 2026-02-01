@@ -3,7 +3,6 @@ import { permissions } from "@/lib/permissions"
 import { getMyProfile } from "@/lib/profile"
 import { Database } from "@/types/database.types"
 
-// We infer the enum values based on logical requirement since SQL just said USER-DEFINED
 export type CheckpointScope = "global" | "campus" | "team" | "participant"
 
 export type Checkpoint = Database["public"]["Tables"]["checkpoints"]["Row"]
@@ -21,15 +20,7 @@ export async function getCheckpoints() {
         return (await query.order("created_at", { ascending: false }).limit(50)).data || []
     }
 
-    // Role-based filtering logic
-
-    const conditions: string[] = [`scope.eq.global`]
-
-    if (user.campus_id) {
-        // Additional filtering logic can be added here if schema supports direct campus linking
-    }
-
-    // ... (logic to get teamIds) ...
+    // Role-based filtering logic: obtain teams
     const { data: teamMembers } = await supabase
         .from("team_members")
         .select("team_id")
@@ -37,13 +28,6 @@ export async function getCheckpoints() {
 
     const teamIds = teamMembers?.map((tm: { team_id: string }) => tm.team_id) || []
 
-    if (teamIds.length > 0) {
-        conditions.push(`and(scope.eq.team,team_id.in.(${teamIds.join(",")}))`)
-    }
-
-    conditions.push(`and(scope.eq.participant,participant_id.eq.${user.id})`)
-
-    // ... (or generation) ...
     const orParts = [`scope.eq.global`]
 
     if (teamIds.length > 0) {
@@ -112,7 +96,5 @@ export async function getBuddyTeams(userId: string) {
 
     if (teamError) return []
 
-    // Map to a simpler structure or return as is. 
-    // Returning {id, team_name}
     return teams
 }

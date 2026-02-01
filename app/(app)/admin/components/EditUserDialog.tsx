@@ -18,11 +18,17 @@ interface Props {
     onClose: () => void
     districts: { id: string, name: string }[]
     campuses: { id: string, name: string }[]
+    currentUserRole: Role
+    currentUserCampusId?: string | null
+    currentUserDistrictId?: string
 }
 
 const ROLES: Role[] = ["participant", "buddy", "campus_coordinator", "qa_foreman", "qa_watcher", "zonal_lead", "admin"]
 
-export default function EditUserDialog({ user, isOpen, onClose, districts, campuses }: Props) {
+export default function EditUserDialog({
+    user, isOpen, onClose, districts, campuses,
+    currentUserRole, currentUserCampusId, currentUserDistrictId
+}: Props) {
     const [isPending, startTransition] = useTransition()
     const [formData, setFormData] = useState({
         role: user.role,
@@ -45,6 +51,9 @@ export default function EditUserDialog({ user, isOpen, onClose, districts, campu
             }
         })
     }
+
+    const isCoordinator = currentUserRole === "campus_coordinator"
+    const allowedRoles = isCoordinator ? ["participant", "buddy"] : ROLES
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -78,8 +87,8 @@ export default function EditUserDialog({ user, isOpen, onClose, districts, campu
                             onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
                             className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all"
                         >
-                            {ROLES.map(role => (
-                                <option key={role} value={role}>{role.replace('_', ' ')}</option>
+                            {allowedRoles.map(role => (
+                                <option key={role} value={role}>{role.replace('_', ' ').toUpperCase()}</option>
                             ))}
                         </select>
                     </div>
@@ -89,7 +98,8 @@ export default function EditUserDialog({ user, isOpen, onClose, districts, campu
                         <select
                             value={formData.district_id}
                             onChange={(e) => setFormData({ ...formData, district_id: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all disabled:bg-gray-100 disabled:text-gray-500"
+                            disabled={isCoordinator}
                         >
                             <option value="">Select District</option>
                             {districts.map(d => (
@@ -103,7 +113,8 @@ export default function EditUserDialog({ user, isOpen, onClose, districts, campu
                         <select
                             value={formData.campus_id}
                             onChange={(e) => setFormData({ ...formData, campus_id: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all disabled:bg-gray-100 disabled:text-gray-500"
+                            disabled={isCoordinator}
                         >
                             <option value="">Select Campus</option>
                             {campuses.map(c => (

@@ -251,6 +251,9 @@ export default function UserManagementTable({
                     onClose={() => setEditingUser(null)}
                     districts={districts}
                     campuses={campuses}
+                    currentUserRole={currentUserRole}
+                    currentUserCampusId={currentUserCampusId}
+                    currentUserDistrictId={currentUserDistrictId}
                 />
             )}
 

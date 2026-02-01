@@ -114,7 +114,7 @@ export async function getMyFeedback() {
 
 export async function updateFeedbackStatus(id: string, status: string) {
     const supabase = await createClient()
-    // Verify admin permission (optional strictly here if RLS handles it, but good for safety)
+    // Verify permission
     const user = await getMyProfile()
     if (!user || !permissions.canViewFeedbackInbox(user.role)) {
         throw new Error("Unauthorized")
