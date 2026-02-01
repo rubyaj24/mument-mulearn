@@ -55,7 +55,7 @@ export default function DashboardHeader({
 
                     {/* Streak Badge (High Visibility) */}
                     {streak > 0 && (
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full shadow-lg animate-pulse hover:animate-none transition-all hover:scale-105 cursor-default" title="Maintain your streak!">
+                        <div className="flex sm:flex-row items-center gap-3 px-3 py-1.5 bg-linear-to-r from-orange-500 to-red-600 text-white rounded-full shadow-lg animate-pulse hover:animate-none transition-all hover:scale-105 cursor-default" title="Maintain your streak!">
                             <Flame size={20} className="fill-white animate-bounce" />
                             <span className="font-black text-lg">{streak}</span>
                         </div>

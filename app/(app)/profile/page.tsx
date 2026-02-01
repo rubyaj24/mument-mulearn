@@ -3,6 +3,7 @@ import { getMyProfile } from "@/lib/profile"
 import { getUserStreak } from "@/lib/daily-updates"
 import Link from "next/link"
 import { Flame } from "lucide-react"
+import StreakSociety from "./components/StreakSociety"
 
 export default async function ProfilePage() {
   const profile = await getMyProfile()
@@ -10,7 +11,7 @@ export default async function ProfilePage() {
 
   const streak = await getUserStreak(profile.id)
 
-  return (
+  return (<>
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="flex items-center gap-6 p-6 relative">
@@ -78,5 +79,8 @@ export default async function ProfilePage() {
         </div>
       </div>
     </div>
-  )
+    <div className="max-w-3xl mx-auto p-6 mt-8">
+      <StreakSociety streak={streak} />
+    </div>
+  </>)
 }
