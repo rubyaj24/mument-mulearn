@@ -28,9 +28,9 @@ export const permissions = {
 
   // View Feedback Inbox (General access to the page)
   canViewFeedbackInbox(role: Role) {
-    // Campus Coordinator (Campus), Foreman (Grouped), Watcher (All), Admin (All)
+    // Foreman (Grouped), Watcher (All), Admin (All)
     // Zonal Lead is "Core Level", likely similar to Admin/Watcher
-    return ["campus_coordinator", "qa_foreman", "qa_watcher", "zonal_lead", "admin"].includes(role)
+    return ["qa_foreman", "qa_watcher", "zonal_lead", "admin"].includes(role)
   },
 
   // Granular Feedback View Scopes

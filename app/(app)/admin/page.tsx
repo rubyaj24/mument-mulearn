@@ -11,8 +11,8 @@ export default async function AdminPage(props: {
     const searchParams = await props.searchParams
     const user = await getMyProfile()
 
-    // Strict Admin Check
-    if (!user || user.role !== "admin") {
+    // Check Access
+    if (!user || !["admin", "campus_coordinator"].includes(user.role)) {
         redirect("/dashboard")
     }
 
@@ -25,6 +25,15 @@ export default async function AdminPage(props: {
         district_id: (searchParams.district_id as string) || undefined,
         campus_id: (searchParams.campus_id as string) || undefined,
         search: (searchParams.search as string) || undefined,
+    }
+
+    // Enforce Scope for Campus Coordinator
+    if (user.role === "campus_coordinator") {
+        if (!user.campus_id) {
+            // Should not happen for valid coordinator, but handle gracefully
+            return <div>Error: You are a Campus Coordinator but have no assigned campus.</div>
+        }
+        filters.campus_id = user.campus_id
     }
 
     // Fetch data in parallel
@@ -55,6 +64,9 @@ export default async function AdminPage(props: {
                     campuses={refData.campuses}
                     currentPage={page}
                     totalPages={totalPages}
+                    currentUserRole={user.role}
+                    currentUserCampusId={user.campus_id}
+                    currentUserDistrictId={user.district_id}
                 />
             </section>
         </div>

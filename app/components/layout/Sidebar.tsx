@@ -37,9 +37,8 @@ interface NavItemProps {
 const NavItem = ({ href, label, icon: Icon, isActive, onClose }: NavItemProps) => {
   return (
     <li>
-      <Link href={href} className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 hover:bg-white/10 ${
-            isActive ? "text-white font-semibold bg-white/5" : "text-white/70"
-          }`} onClick={onClose}>
+      <Link href={href} className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 hover:bg-white/10 ${isActive ? "text-white font-semibold bg-white/5" : "text-white/70"
+        }`} onClick={onClose}>
         <Icon size={20} className={isActive ? "text-brand-yellow" : ""} />
         {label}
         {isActive && (
@@ -92,10 +91,6 @@ export default function Sidebar({ role, open, onClose }: Props) {
           <NavItem href="/profile" label="Profile" icon={User} isActive={pathname === '/profile'} onClose={onClose} />
           <NavItem href="/feedback/submit" label="Submit Feedback" icon={MessageSquareText} isActive={pathname === '/feedback/submit'} onClose={onClose} />
 
-          {/* Show regular Checkpoints link if not managing or just one link? 
-                The original code had two links for checkpoints depending on permission. 
-                I will preserve the original logic structure but use NavItem.
-            */}
           {!permissions.canManageCheckpoints(role) && (
             <NavItem href="/checkpoints" label="Checkpoints" icon={MapPin} isActive={pathname === '/checkpoints'} onClose={onClose} />
           )}
@@ -114,13 +109,11 @@ export default function Sidebar({ role, open, onClose }: Props) {
 
           <NavItem href="/announcements" label="Announcements" icon={Megaphone} isActive={pathname === '/announcements'} onClose={onClose} />
 
-          {role === "admin" && (
+          {["admin", "campus_coordinator"].includes(role) && (
             <NavItem href="/admin" label="Admin" icon={ShieldCheck} isActive={pathname === '/admin'} onClose={onClose} />
           )}
 
-          {role === "campus_coordinator" && (
-            <NavItem href="/campus" label="Coordinator" icon={University} isActive={pathname === '/campus'} onClose={onClose} />
-          )}
+
         </ul>
       </nav>
 

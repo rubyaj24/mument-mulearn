@@ -96,13 +96,6 @@ export async function resetPasswordAction(formData: FormData) {
     const email = String(formData.get("email")).trim()
     const supabase = await createClient()
 
-    // Supabase will send a link that points to the configured site URL + /auth/callback?code=...
-    // The callback route should exchange the code for a session and then redirect.
-    // Here we suggest redirecting to a settings page where they can update the password.
-    // If you haven't set up the callback route, you need to.
-
-    // We assume there is a generic auth callback handler that handles this.
-    // If not, we rely on the default behavior which usually just works if the site URL is correct.
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/settings/password`,
@@ -145,18 +138,29 @@ export async function createUserAction(data: {
     district_id: string;
     campus_id: string
 }) {
-    // Note: We don't need `createClient` for the auth part since we use `createAdminClient`,
-    // but we check admin role first.
     const currentUser = await getMyProfile()
 
-    if (currentUser?.role !== "admin") {
+    if (!currentUser || !["admin", "campus_coordinator"].includes(currentUser.role)) {
         throw new Error("Unauthorized")
+    }
+
+    // Role-specific constraints for Campus Coordinators
+    if (currentUser.role === "campus_coordinator") {
+        if (!currentUser.campus_id) throw new Error("Account not linked to a campus")
+
+        // Enforce campus scope
+        data.campus_id = currentUser.campus_id
+        data.district_id = currentUser.district_id
+
+        if (data.role !== "buddy") {
+            throw new Error("Campus Coordinators can only add Buddies")
+        }
     }
 
     const supabaseAdmin = createAdminClient()
     let userId: string | null = null;
 
-    // 1. Try to Create Auth User
+    // 1. Create Supabase Auth User
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: data.email,
         password: data.password,
@@ -167,22 +171,20 @@ export async function createUserAction(data: {
     })
 
     if (authError) {
+        // Handle case where auth user exists but profile might be missing
         if (authError.message.includes("already been registered")) {
-            // User exists, try to find them to repair the profile
-            // We use listUsers. For very large projects this is inefficient, but okay here.
             const { data: usersData } = await supabaseAdmin.auth.admin.listUsers()
-            // Naive find
             const existingUser = usersData.users.find(u => u.email === data.email)
 
             if (existingUser) {
                 userId = existingUser.id
-                // Update password and name for the existing user
+                // Update credentials for existing user
                 await supabaseAdmin.auth.admin.updateUserById(userId, {
                     password: data.password,
                     user_metadata: { full_name: data.full_name }
                 })
             } else {
-                throw new Error("User with this email exists but could not be located in directory.")
+                throw new Error("User email exists but account not found.")
             }
         } else {
             throw new Error(authError.message)
@@ -193,9 +195,7 @@ export async function createUserAction(data: {
 
     if (!userId) throw new Error("Failed to resolve user ID")
 
-    // 2. Upsert Profile
-    // Using upsert ensures that if the profile is missing (ghost user), it gets created.
-    // If it exists, it gets updated.
+    // 2. Create or Update Profile
     const { error: profileError } = await supabaseAdmin
         .from("profiles")
         .upsert({

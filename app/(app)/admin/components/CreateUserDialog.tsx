@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Loader2, UserPlus, X } from "lucide-react"
 import { Role } from "@/types/user"
 import { createUserAction } from "@/actions"
@@ -10,11 +10,17 @@ interface Props {
     onClose: () => void
     districts: { id: string, name: string }[]
     campuses: { id: string, name: string }[]
+    currentUserRole?: Role
+    currentUserCampusId?: string | null
+    currentUserDistrictId?: string
 }
 
 const ROLES: Role[] = ["participant", "buddy", "campus_coordinator", "qa_foreman", "qa_watcher", "zonal_lead", "admin"]
 
-export default function CreateUserDialog({ isOpen, onClose, districts, campuses }: Props) {
+export default function CreateUserDialog({
+    isOpen, onClose, districts, campuses,
+    currentUserRole, currentUserCampusId, currentUserDistrictId
+}: Props) {
     const [isPending, startTransition] = useTransition()
     const [formData, setFormData] = useState({
         full_name: "",
@@ -24,6 +30,32 @@ export default function CreateUserDialog({ isOpen, onClose, districts, campuses 
         district_id: "",
         campus_id: ""
     })
+
+    const isCoordinator = currentUserRole === "campus_coordinator"
+
+    // Filter Roles for Coordinator
+    const allowedRoles = isCoordinator ? ["buddy"] : ROLES
+
+    // Effect to auto-fill for restricted users
+    useEffect(() => {
+        if (isOpen) {
+            if (isCoordinator) {
+                setFormData(prev => ({
+                    ...prev,
+                    campus_id: currentUserCampusId || "",
+                    district_id: currentUserDistrictId || "",
+                    role: "buddy"
+                }))
+            } else {
+                setFormData(prev => ({
+                    ...prev,
+                    role: "participant",
+                    campus_id: "",
+                    district_id: ""
+                }))
+            }
+        }
+    }, [isOpen, isCoordinator, currentUserCampusId, currentUserDistrictId])
 
     if (!isOpen) return null
 
@@ -35,7 +67,7 @@ export default function CreateUserDialog({ isOpen, onClose, districts, campuses 
             try {
                 await createUserAction(formData)
                 onClose()
-                // Reset form?
+                // Reset form
                 setFormData({
                     full_name: "",
                     email: "",
@@ -50,6 +82,8 @@ export default function CreateUserDialog({ isOpen, onClose, districts, campuses 
             }
         })
     }
+
+
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -115,7 +149,7 @@ export default function CreateUserDialog({ isOpen, onClose, districts, campuses 
                             onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
                             className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all"
                         >
-                            {ROLES.map(role => (
+                            {allowedRoles.map(role => (
                                 <option key={role} value={role}>{role.replace(/_/g, " ").toUpperCase()}</option>
                             ))}
                         </select>
@@ -126,8 +160,9 @@ export default function CreateUserDialog({ isOpen, onClose, districts, campuses 
                         <select
                             value={formData.district_id}
                             onChange={(e) => setFormData({ ...formData, district_id: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all"
+                            className={`w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all ${isCoordinator ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
                             required
+                            disabled={isCoordinator}
                         >
                             <option value="">Select District</option>
                             {districts.map(d => (
@@ -137,11 +172,12 @@ export default function CreateUserDialog({ isOpen, onClose, districts, campuses 
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Campus (Optional)</label>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Campus {isCoordinator ? "" : "(Optional)"}</label>
                         <select
                             value={formData.campus_id}
                             onChange={(e) => setFormData({ ...formData, campus_id: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all"
+                            className={`w-full p-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all ${isCoordinator ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+                            disabled={isCoordinator}
                         >
                             <option value="">Select Campus</option>
                             {campuses.map(c => (

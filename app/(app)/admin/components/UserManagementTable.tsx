@@ -4,10 +4,10 @@ import { useState, useTransition, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AdminUserView } from "@/lib/admin"
 import { Role } from "@/types/user"
-import { Search, Loader2, X, Filter, Edit2, UserPlus } from "lucide-react" // Added UserPlus
+import { Search, Loader2, X, Filter, Edit2, UserPlus } from "lucide-react"
 import SearchableSelect from "./SearchableSelect"
 import EditUserDialog from "./EditUserDialog"
-import CreateUserDialog from "./CreateUserDialog" // Added CreateUserDialog import
+import CreateUserDialog from "./CreateUserDialog"
 
 interface Props {
     users: AdminUserView[]
@@ -15,11 +15,17 @@ interface Props {
     campuses: { id: string, name: string }[]
     currentPage: number
     totalPages: number
+    currentUserRole: Role
+    currentUserCampusId?: string | null
+    currentUserDistrictId?: string
 }
 
 const ROLES: Role[] = ["participant", "buddy", "campus_coordinator", "qa_foreman", "qa_watcher", "zonal_lead", "admin"]
 
-export default function UserManagementTable({ users, districts, campuses, currentPage, totalPages }: Props) {
+export default function UserManagementTable({
+    users, districts, campuses, currentPage, totalPages,
+    currentUserRole, currentUserCampusId, currentUserDistrictId
+}: Props) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
@@ -70,8 +76,6 @@ export default function UserManagementTable({ users, districts, campuses, curren
 
     const hasFilters = searchParams.toString().length > 0 && searchParams.get("page") !== "1"
 
-    // ... (rest of code) ...
-
     return (
         <div className="space-y-6">
             {/* Modern Filter Bar */}
@@ -79,7 +83,7 @@ export default function UserManagementTable({ users, districts, campuses, curren
 
                 <div className="space-y-4 md:space-y-0 md:flex md:items-center md:gap-4 flex-1">
                     {/* Search Input */}
-                    <div className="relative flex-1 min-w-50">
+                    <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
                             type="text"
@@ -101,23 +105,27 @@ export default function UserManagementTable({ users, districts, campuses, curren
                             />
                         </div>
 
-                        <div className="w-full md:w-44">
-                            <SearchableSelect
-                                options={districts}
-                                value={searchParams.get("district_id") || "all"}
-                                onChange={(val) => handleFilterChange("district_id", val)}
-                                placeholder="Districts"
-                            />
-                        </div>
+                        {currentUserRole !== "campus_coordinator" && (
+                            <>
+                                <div className="w-full md:w-44">
+                                    <SearchableSelect
+                                        options={districts}
+                                        value={searchParams.get("district_id") || "all"}
+                                        onChange={(val) => handleFilterChange("district_id", val)}
+                                        placeholder="Districts"
+                                    />
+                                </div>
 
-                        <div className="w-full md:w-56">
-                            <SearchableSelect
-                                options={campuses}
-                                value={searchParams.get("campus_id") || "all"}
-                                onChange={(val) => handleFilterChange("campus_id", val)}
-                                placeholder="Campuses"
-                            />
-                        </div>
+                                <div className="w-full md:w-56">
+                                    <SearchableSelect
+                                        options={campuses}
+                                        value={searchParams.get("campus_id") || "all"}
+                                        onChange={(val) => handleFilterChange("campus_id", val)}
+                                        placeholder="Campuses"
+                                    />
+                                </div>
+                            </>
+                        )}
 
                         {/* Clear Button */}
                         {hasFilters || searchTerm ? (
@@ -142,7 +150,6 @@ export default function UserManagementTable({ users, districts, campuses, curren
             </div>
 
             {/* Table */}
-            {/* ... */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
@@ -253,6 +260,9 @@ export default function UserManagementTable({ users, districts, campuses, curren
                 onClose={() => setIsCreateOpen(false)}
                 districts={districts}
                 campuses={campuses}
+                currentUserRole={currentUserRole}
+                currentUserCampusId={currentUserCampusId}
+                currentUserDistrictId={currentUserDistrictId}
             />
         </div>
     )
