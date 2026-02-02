@@ -4,6 +4,7 @@ import { getMyProfile } from "@/lib/profile"
 import { redirect } from "next/navigation"
 import { Role } from "@/types/user"
 import UserManagementTable from "./components/UserManagementTable"
+import NudgeButton from "./components/NudgeButton"
 
 export default async function AdminPage(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -46,9 +47,12 @@ export default async function AdminPage(props: {
 
     return (
         <div className="py-8 px-6 max-w-7xl mx-auto">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
-                <p className="text-slate-500">Manage users, roles, and platform settings.</p>
+            <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
+                    <p className="text-slate-500">Manage users, roles, and platform settings.</p>
+                </div>
+                <NudgeButton />
             </header>
 
             <section>

@@ -2,14 +2,22 @@
 
 import { createAnnouncement as serviceCreateAnnouncement } from "@/lib/announcements"
 import { createCheckpoint as serviceCreateCheckpoint, CheckpointScope } from "@/lib/checkpoints"
+import { sendBroadcastNotification } from "@/lib/push"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import webpush from "web-push"
 
 export async function createAnnouncementAction(formData: FormData) {
     const content = formData.get("content") as string
     if (!content) return
 
     await serviceCreateAnnouncement(content)
+
+    // Fire and forget notification (don't block UI)
+    // Truncate content for body if too long
+    const body = content.length > 100 ? content.substring(0, 97) + "..." : content
+    sendBroadcastNotification("New Announcement 📢", body, "/announcements")
+
     revalidatePath("/announcements")
 }
 
@@ -301,6 +309,8 @@ export async function markNotificationReadAction(id: string) {
     revalidatePath('/dashboard')
 }
 
+// ... existing code ...
+
 export async function markAllNotificationsReadAction() {
     const supabase = await createClient()
     const user = await getMyProfile()
@@ -313,4 +323,87 @@ export async function markAllNotificationsReadAction() {
         .eq('is_read', false)
 
     revalidatePath('/dashboard')
+}
+
+const QUOTES = [
+    "Bestie, the commit history is looking dry. 💀",
+    "No push today? That’s not very sigma of you.",
+    "Rizz up your GitHub graph today. 💅",
+    "Academic comeback starts with a daily update. Lock in. 🔒",
+    "Don't let your streak flop. We cooking today? 🍳",
+    "Imagine not updating your progress. Couldn't be us. 💅",
+    "Main character energy = Shipping code daily. ✨",
+    "Your project is specifically asking for you. Don't ghost. 👻",
+    "Chat, is this real? You haven't updated yet? 😭",
+    "Grindset mode: ON. Let's get this bread. 🍞",
+    "Pani eduthal mathiyo? Athu lokathe ariyikkande? Post your update in μMent! 📢",
+    "If you didn't post an update, did you even learn today? Don't be a ghost. 👻",
+    "Update idunnath 'thallu' alla, athu ninte progress-inte proof aanu. 📝",
+    "Don't let your hard work go invisible. Log it in μMent. 👁️",
+    "Nammude progress nammal thanne parayanam. Update now! 🗣️",
+    "Update idaan madiyan aanel, career-il 'slow motion' aayi pokendi varum. 🐢",
+    "Ninte mentor ninte update-inu vendi wait cheyyukayaanu. Scene aakkalle! ⏳",
+    "Side-il irikkunnavan update ittu 'Karma' vaari. Nee enthu nokki irikkukaya? 📈",
+    "Buddy-ne 'Ghost' cheyyalle, Daily Update ittu 'Host' cheyyu. 👻➡️🎤",
+    "Nee entha cheyyunne ennu buddy-ku ariyande? Onnu ezhuthu aliya! ✍️",
+    "Don't be the 'silent member' of the squad. Speak through your updates. 🔊",
+    "Nammude team-inte mass kaanikkan daily updates nirbandham aanu. 🔥",
+    "Streak maintain cheyyunnath Snapchat-il mathram pora, μMent-ilum venam. 🔥",
+    "Your buddy is not a mind reader. Update your status! 🧠",
+    "Update idaan madiyan aanel, pinne 'job kittilla' ennu paranju karayalle. 💼",
+    "Pani edukkunnavanu update idaan oru madiyum undavilla. Nee entha madiyichu nikkunne? 🤷‍♂️",
+    "Update idaan neram illa ennu parayunnath, 'food kazhikkan neram illa' ennu parayunnath poleya. 🍽️",
+    "Ninte growth ninte kayyilaanu. Update ittu athu urappikku. 🌱",
+    "Your update is your voice in the μLearn ecosystem. 🎙️",
+    "Peer validation starts with peer visibility. Let them see your work. 👀",
+    "Karma points are waiting for your update. Don't keep them waiting. 💎"
+];
+
+export async function triggerDailyNudgeAction() {
+    const user = await getMyProfile()
+    if (!user || !["admin"].includes(user.role)) {
+        return { success: false, error: "Unauthorized" }
+    }
+
+    const supabase = await createClient()
+    const today = new Date().toISOString().split("T")[0]
+
+    // 1. Find active updates today
+    const { data: activeUsers } = await supabase
+        .from("daily_updates")
+        .select("user_id")
+        .gte("created_at", today)
+
+    const committedUserIds = new Set((activeUsers || []).map(u => u.user_id))
+
+    const { data: allSubs } = await supabase.from("push_subscriptions").select("*")
+    if (!allSubs) return { success: true, count: 0 }
+
+    const inactiveSubs = allSubs.filter(sub => !committedUserIds.has(sub.user_id))
+    if (inactiveSubs.length === 0) return { success: true, count: 0 }
+
+    const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+    const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!
+    webpush.setVapidDetails('mailto:admin@mument.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+
+    await Promise.all(inactiveSubs.map(async (sub) => {
+        const randomQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)]
+        const payload = JSON.stringify({
+            title: "Daily Check-in 🫡",
+            body: randomQuote,
+            url: "/daily-update"
+        })
+        try {
+            await webpush.sendNotification({
+                endpoint: sub.endpoint,
+                keys: { p256dh: sub.p256dh, auth: sub.auth }
+            }, payload)
+        } catch (e: any) {
+            if (e.statusCode === 410 || e.statusCode === 404) {
+                await supabase.from("push_subscriptions").delete().eq("id", sub.id)
+            }
+        }
+    }))
+
+    return { success: true, count: inactiveSubs.length }
 }
