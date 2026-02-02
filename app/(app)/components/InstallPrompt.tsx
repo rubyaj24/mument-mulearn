@@ -9,9 +9,9 @@ import { useToast } from "@/components/ToastProvider"
 export default function InstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
     const [showPrompt, setShowPrompt] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const { isSupported, subscription, subscribeToPush } = usePushSubscription()
     const { show } = useToast()
-
 
     useEffect(() => {
         // 1. Check if already installed
@@ -42,20 +42,28 @@ export default function InstallPrompt() {
     }
 
     const handleSubscribe = async () => {
-        const success = await subscribeToPush()
-        if (success) {
-            show({ title: "Success", description: "Notifications enabled!" })
-        } else {
-            show({ title: "Error", description: "Could not enable notifications." })
+        setIsLoading(true)
+        try {
+            const success = await subscribeToPush()
+            if (success) {
+                show({ title: "Success", description: "Notifications enabled!" })
+            } else {
+                show({ title: "Error", description: "Could not enable notifications. Check permissions." })
+            }
+        } catch (error) {
+            console.error(error)
+            show({ title: "Error", description: "An unexpected error occurred." })
+        } finally {
+            setIsLoading(false)
         }
     }
 
     if (!showPrompt && subscription) return null // If installed or prompt dismissed AND notifications enabled, hide.
 
     // If we have an install prompt available OR notifications are supported but disabled, show something.
-    // Prioritize Install.
-    const showInstall = showPrompt && deferredPrompt
+    // Flow: Enable Updates -> Then Install App
     const showNotify = isSupported && !subscription
+    const showInstall = !showNotify && showPrompt && deferredPrompt
 
     if (!showInstall && !showNotify) return null
 
@@ -89,9 +97,11 @@ export default function InstallPrompt() {
                 {showNotify && (
                     <button
                         onClick={handleSubscribe}
-                        className={`flex-1 ${!showInstall ? 'bg-brand-blue text-white' : 'bg-slate-100 text-slate-700'} py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-colors`}
+                        disabled={isLoading}
+                        className={`flex-1 ${!showInstall ? 'bg-brand-blue text-white' : 'bg-slate-100 text-slate-700'} py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                        <Bell size={16} /> Notify Me
+                        <Bell size={16} />
+                        {isLoading ? "Enabling..." : "Enable Updates"}
                     </button>
                 )}
             </div>

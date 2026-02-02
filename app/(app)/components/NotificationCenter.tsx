@@ -21,6 +21,7 @@ export default function NotificationCenter() {
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
+    const [isLoading, setIsLoading] = useState(false)
     const { isSupported, subscription, subscribeToPush } = usePushSubscription()
     const { show } = useToast()
     const router = useRouter()
@@ -52,11 +53,19 @@ export default function NotificationCenter() {
     }, [])
 
     const handleEnablePush = async () => {
-        const success = await subscribeToPush()
-        if (success) {
-            show({ title: "Success", description: "You will now receive notifications!" })
-        } else {
-            show({ title: "Error", description: "Failed to enable notifications. Check permissions." })
+        setIsLoading(true)
+        try {
+            const success = await subscribeToPush()
+            if (success) {
+                show({ title: "Success", description: "You will now receive notifications!" })
+            } else {
+                show({ title: "Error", description: "Failed to enable notifications. Check permissions." })
+            }
+        } catch (error) {
+            console.error(error)
+            show({ title: "Error", description: "An unexpected error occurred." })
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -119,9 +128,10 @@ export default function NotificationCenter() {
                                 </p>
                                 <button
                                     onClick={handleEnablePush}
-                                    className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition"
+                                    disabled={isLoading}
+                                    className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition disabled:opacity-50"
                                 >
-                                    Enable Now
+                                    {isLoading ? "Enabling..." : "Enable Now"}
                                 </button>
                             </div>
                         </div>

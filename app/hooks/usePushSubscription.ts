@@ -32,18 +32,38 @@ export function usePushSubscription() {
     }
 
     async function subscribeToPush() {
-        if (!headerKey) return
+        if (!headerKey) {
+            console.error("No VAPID public key found")
+            return false
+        }
+
         try {
+            console.log("Requesting notification permission...")
+            const permission = await Notification.requestPermission()
+            if (permission !== 'granted') {
+                console.error("Permission not granted:", permission)
+                return false
+            }
+
+            console.log("Waiting for Service Worker...")
             const registration = await navigator.serviceWorker.ready
+
+            console.log("Subscribing to PushManager...")
             const sub = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(headerKey),
             })
+
+            console.log("Subscription successful:", sub)
             setSubscription(sub)
+
+            console.log("Saving to server...")
             await saveSubscriptionAction(JSON.parse(JSON.stringify(sub)))
+            console.log("Saved to server.")
+
             return true
         } catch (error) {
-            console.error("Subscription failed", error)
+            console.error("Subscription failed:", error)
             return false
         }
     }
