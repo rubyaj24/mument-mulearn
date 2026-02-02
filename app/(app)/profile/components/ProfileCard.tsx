@@ -3,15 +3,15 @@ import Link from "next/link"
 
 interface ProfileCardProps {
   profile: {
-    full_name?: string
-    role?: string
-    created_at?: string
-    campus_name?: string
-    campus_id?: string
-    district_name?: string
-    district_id?: string
-    email?: string
-    email_id?: string
+    full_name?: string | null
+    role?: string | null
+    created_at?: string | null
+    campus_name?: string | null
+    campus_id?: string | null
+    district_name?: string | null
+    district_id?: string | null
+    email?: string | null
+    email_id?: string | null
   }
   streak: number
 }
