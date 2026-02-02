@@ -80,6 +80,7 @@ export default function Sidebar({ role, open, onClose }: Props) {
           height={60}
           alt="Mument 2.0"
           className="object-contain"
+          style={{ width: "auto", height: "auto" }}
           priority
         />
       </div>
