@@ -1,6 +1,7 @@
 "use client"
 
 import { Flame, Check, TrendingUp, AlertOctagon , ArrowBigUpDash, Calendar } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface PersonalStatData {
     totalUpdates?: number
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export default function PersonalStats({ stats }: Props) {
+
+    const router = useRouter();
 
     // console.log(stats.streakDays)
     // stats.hasUpdatedToday = true // For demo purposes only, remove this line in production  ;
@@ -40,7 +43,7 @@ export default function PersonalStats({ stats }: Props) {
                 <p className={`mt-4 text-sm ${stats.hasUpdatedToday ? 'text-green-600' : 'text-white'}`}>
                     {stats.hasUpdatedToday ? '✓ You have completed today\'s update' : 'No update yet today.'}
                 </p>
-                { stats.hasUpdatedToday ? null : <button className="bg-white p-3 rounded-xl text-red-700">Daily Updates</button>}
+                { stats.hasUpdatedToday ? null : <button onClick={() => router.push('/daily-update')} className="bg-white p-3 rounded-xl text-red-700">Daily Updates</button>}
                 </div>
             </div>
 

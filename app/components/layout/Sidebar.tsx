@@ -55,7 +55,7 @@ export default function Sidebar({ role, open, onClose }: Props) {
   return (
     <aside
       className={`
-        fixed z-40 inset-y-0 left-0 w-64
+        fixed z-50 inset-y-0 left-0 w-64
         bg-brand-blue text-white font-redhat
         flex flex-col p-6 shadow-xl
         transform transition-transform duration-300 ease-in-out

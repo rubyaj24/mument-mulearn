@@ -6,6 +6,7 @@ import { Loader2, MoveLeft, MoveRight } from "lucide-react";
 import FilterBar from "./FilterBar";
 import UpdateCard from "./UpdateCard";
 import { Role } from "@/types/user";
+import { useToast } from "@/components/ToastProvider";
 
 interface DailyUpdate {
     id: string;
@@ -31,6 +32,7 @@ interface UpdateCardDailyUpdate {
 export default function DailyForumFilter({ dailyUpdates, colleges, role, page = 1, limit = 50, initialSort = 'recent', totalRows = 0 }: { dailyUpdates: DailyUpdate[]; colleges: string[]; role?: Role; page?: number; limit?: number; initialSort?: string; totalRows?: number }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { show: showToast } = useToast();
     
     // Use actual database row count, fallback to dailyUpdates length
     const actualTotalRows = totalRows > 0 ? totalRows : dailyUpdates.length;
@@ -173,7 +175,10 @@ export default function DailyForumFilter({ dailyUpdates, colleges, role, page = 
                 }));
                 
                 const error = await response.json();
-                alert(error.error || 'Failed to upvote');
+                showToast({
+                    title: "Upvote Failed",
+                    description: error.message || "Failed to upvote the update."
+                });
             }
         } catch (error) {
             // Revert optimistic update on error
@@ -191,7 +196,10 @@ export default function DailyForumFilter({ dailyUpdates, colleges, role, page = 
             }));
             
             console.error('Upvote error:', error);
-            alert('Failed to upvote');
+            showToast({
+                title: "Upvote Failed",
+                description: error instanceof Error ? error.message : "Failed to upvote the update."
+            });
         } finally {
             setUpvoting(null);
         }
