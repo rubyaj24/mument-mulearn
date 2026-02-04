@@ -28,11 +28,12 @@ interface UpdateCardDailyUpdate {
     hasUpvoted?: boolean;
 }
 
-export default function DailyForumFilter({ dailyUpdates, colleges, role, page = 1, limit = 50, initialSort = 'recent' }: { dailyUpdates: DailyUpdate[]; colleges: string[]; role?: Role; page?: number; limit?: number; initialSort?: string }) {
+export default function DailyForumFilter({ dailyUpdates, colleges, role, page = 1, limit = 50, initialSort = 'recent', totalRows = 0 }: { dailyUpdates: DailyUpdate[]; colleges: string[]; role?: Role; page?: number; limit?: number; initialSort?: string; totalRows?: number }) {
     const router = useRouter();
     const searchParams = useSearchParams();
     
-    // Read all filter params from URL to ensure they're always in sync
+    // Use actual database row count, fallback to dailyUpdates length
+    const actualTotalRows = totalRows > 0 ? totalRows : dailyUpdates.length;
     const urlPage = parseInt(searchParams.get('page') || '1', 10);
     const urlSort = searchParams.get('sort') || initialSort;
     const urlKeyword = searchParams.get('keyword') || '';
@@ -222,7 +223,7 @@ export default function DailyForumFilter({ dailyUpdates, colleges, role, page = 
                 sort={sort}
                 setSort={handleSortChange}
                 colleges={colleges}
-                totalUpdates={dailyUpdates.length}
+                totalUpdates={actualTotalRows}
                 filteredUpdates={paginatedUpdates.length}
                 role={role || 'participant'}
                 filteredData={filteredUpdates}
