@@ -8,6 +8,7 @@ export default async function ProfilePage() {
   const profile = await getMyProfile()
   if (!profile) redirect("/login")
 
+
   const streak = await getUserStreak(profile.id)
 
   return (

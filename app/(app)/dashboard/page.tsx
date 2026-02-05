@@ -10,6 +10,7 @@ import { getDailyUpdateStats as getCampusDailyStats, getTopContributors, getCamp
 import AdminStats from "./components/AdminStats"
 import CampusStats from "./components/CampusStats"
 import PersonalStats from "./components/PersonalStats"
+import TeamCard from "./components/TeamCard"
 
 
 export default async function DashboardPage() {
@@ -58,6 +59,7 @@ export default async function DashboardPage() {
 
         {/* Personal Statistics Section (Visible to all users) */}
         {personalStats && <PersonalStats stats={personalStats} />}
+        <TeamCard profile={typedProfile} />
 
         {/* Admin Analytics Section */}
         <RoleGate role={role} allow={['admin']}>

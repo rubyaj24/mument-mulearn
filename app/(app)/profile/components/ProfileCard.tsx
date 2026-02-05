@@ -13,6 +13,8 @@ interface ProfileCardProps {
     district_id?: string | null
     email?: string | null
     email_id?: string | null
+    team_name?: string | null
+    team_code?: string | null
   }
   streak: number
 }
@@ -82,6 +84,11 @@ export default function ProfileCard({ profile, streak }: ProfileCardProps) {
           <div>
             <div className="text-xs text-slate-500">Role</div>
             <div className="mt-1 font-medium">{profile.role ?? "Member"}</div>
+          </div>
+
+          <div>
+            <div className="text-xs text-slate-500">Team</div>
+            <div className="mt-1 font-medium">{profile.team_name ?? "Not assigned"} - {profile.team_code ?? ""}</div>
           </div>
         </div>
       </div>
