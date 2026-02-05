@@ -132,8 +132,10 @@ export interface Database {
                     id: string
                     full_name: string
                     role: Database["public"]["Enums"]["user_role"]
+                    email: string | null
                     district_id: string
                     campus_id: string | null
+                    team_id: string | null
                     created_at: string | null
                 }
                 Insert: {
@@ -160,6 +162,14 @@ export interface Database {
                     team_name: string
                     campus_id: string
                     district_id: string
+                    created_at: string | null
+                }
+            }
+            team_members: {
+                Row: {
+                    id: string
+                    team_id: string
+                    user_id: string
                     created_at: string | null
                 }
             }
