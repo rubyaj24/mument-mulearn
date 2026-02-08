@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { updateFeedbackStatus } from "@/lib/feedback"
 import { postReply, toggleReaction } from "@/lib/feedback-thread"
 import { Role } from "@/types/user"
+import { isCheckpointsEnabled } from "@/lib/admin"
 
 export async function createAnnouncementAction(formData: FormData) {
     const content = formData.get("content") as string
@@ -27,6 +28,12 @@ export async function createAnnouncementAction(formData: FormData) {
 }
 
 export async function createCheckpointVerificationAction(formData: FormData) {
+    // Check if checkpoints are enabled
+    const checkpointsEnabled = await isCheckpointsEnabled()
+    if (!checkpointsEnabled) {
+        throw new Error("Checkpoints feature is currently disabled. Please contact admin.")
+    }
+
     const team_id = formData.get("team_id") as string
     const checkpoint_number = parseInt(formData.get("checkpoint_number") as string)
     const is_absent = formData.get("is_absent") === "true"
@@ -79,6 +86,12 @@ export async function createCheckpointVerificationAction(formData: FormData) {
 
 export async function deleteCheckpointAction(checkpointId: string) {
     try {
+        // Check if checkpoints are enabled
+        const checkpointsEnabled = await isCheckpointsEnabled()
+        if (!checkpointsEnabled) {
+            throw new Error("Checkpoints feature is currently disabled. Please contact admin.")
+        }
+
         await serviceDeleteCheckpoint(checkpointId)
         revalidatePath("/checkpoints")
     } catch (error: unknown) {
@@ -104,6 +117,12 @@ export async function updateCheckpointAction(
     }
 ) {
     try {
+        // Check if checkpoints are enabled
+        const checkpointsEnabled = await isCheckpointsEnabled()
+        if (!checkpointsEnabled) {
+            throw new Error("Checkpoints feature is currently disabled. Please contact admin.")
+        }
+
         await serviceUpdateCheckpoint(checkpointId, updates)
         revalidatePath("/checkpoints")
     } catch (error: unknown) {

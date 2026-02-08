@@ -1,19 +1,24 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { Loader2 } from 'lucide-react';
 import Silk from '@/components/Silk';
 import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter()
   // const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
 
 
-  const redirectToDashboard = useCallback(() => router.replace("/dashboard"), [router])
+  const redirectToDashboard = useCallback(() => {
+    setLoading(true)
+    router.replace("/dashboard")
+  }, [router])
 
   // If already logged in, skip login page
 
@@ -61,7 +66,7 @@ export default function LandingPage() {
             handleGetStarted();
           }}
         >
-          Get Started
+          {loading ? <Loader2 className="animate-spin text-blue-500" /> : "Get Started"}
         </button>
       </div>
 

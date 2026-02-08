@@ -21,6 +21,7 @@ type CheckpointRecord = {
 	suggestions?: string | null
 	buddy_name?: string | null
 	team_name?: string | null
+	college_name?: string | null
 	teams?: { team_name?: string | null } | null
 }
 
@@ -200,9 +201,16 @@ export default function CheckpointExpanded({ checkpoint }: { checkpoint: Checkpo
 								<h2 className="text-2xl font-bold text-slate-800">
 									{teamName} - Checkpoint {checkpoint.checkpoint_number}
 								</h2>
-								<p className="text-xs text-slate-400 mt-1">
-									{new Date(checkpoint.created_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-								</p>
+								<div className="flex items-center gap-4 mt-2">
+									{checkpoint.college_name && (
+										<p className="text-xs text-slate-500">
+											<span className="font-semibold">College:</span> {checkpoint.college_name}
+										</p>
+									)}
+									<p className="text-xs text-slate-400">
+										{new Date(checkpoint.created_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+									</p>
+								</div>
 							</div>
 							<div className="flex gap-2">
 								<button
@@ -396,6 +404,13 @@ export default function CheckpointExpanded({ checkpoint }: { checkpoint: Checkpo
 											</div>
 										</div>
 									</div>
+
+									{checkpoint.college_name && (
+										<div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+											<p className="font-semibold text-amber-900">College</p>
+											<p className="text-amber-800">{checkpoint.college_name}</p>
+										</div>
+									)}
 
 									{checkpoint.idea_summary && (
 										<div>

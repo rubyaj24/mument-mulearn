@@ -4,6 +4,7 @@ import { isCheckpointsEnabled } from "@/lib/admin"
 import { Role } from "@/types/user"
 import CheckpointVerification from "./components/CheckpointVerification"
 import CheckpointExpanded from "./components/CheckpointExpanded"
+import ExportButton from "./components/ExportButton"
 
 export default async function CheckpointsPage(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -40,6 +41,9 @@ export default async function CheckpointsPage(props: {
                     {/* Checkpoint verification form */}
                     {(checkpointsEnabled) && (
                         <CheckpointVerification availableTeams={verifiableTeams} completedCheckpoints={checkpoints} />
+                    )}
+                    {role === "admin" && (
+                        <ExportButton />
                     )}
                 </div>
             </header>

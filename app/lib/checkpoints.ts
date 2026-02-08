@@ -27,7 +27,7 @@ export async function getCheckpoints(limit: number = 50, offset: number = 0): Pr
     })
 
     try {
-        // Query with join to teams table to get team_name
+        // Query with join to teams and colleges tables
         let query = supabase
             .from("checkpoints")
             .select(`
@@ -35,6 +35,10 @@ export async function getCheckpoints(limit: number = 50, offset: number = 0): Pr
                 teams:team_id (
                     id,
                     team_name
+                ),
+                colleges:campus_id (
+                    id,
+                    name
                 )
             `, { count: "exact" })
 
@@ -107,19 +111,27 @@ export async function getCheckpoints(limit: number = 50, offset: number = 0): Pr
                 })
             }
             
-            // Attach buddy_name to each checkpoint
+            // Attach buddy_name and college_name to each checkpoint
             return {
-                data: data.map((checkpoint) => ({
+                data: data.map((checkpoint: any) => ({
                     ...checkpoint,
-                    buddy_name: buddyMap.get(checkpoint.buddy_id) || "Unknown"
+                    buddy_name: buddyMap.get(checkpoint.buddy_id) || "Unknown",
+                    college_name: checkpoint.colleges?.name || null
                 })),
                 total,
                 totalPages
             }
         }
 
-        // Return data with team info included in the teams field
-        return { data: data || [], total, totalPages }
+        // Return data with team and college info included
+        return { 
+            data: (data || []).map((checkpoint: any) => ({
+                ...checkpoint,
+                college_name: checkpoint.colleges?.name || null
+            })), 
+            total, 
+            totalPages 
+        }
     } catch (err) {
         console.error("[getCheckpoints] Caught error:", err)
         if (err instanceof Error) {
