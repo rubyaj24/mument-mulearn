@@ -166,7 +166,7 @@ export default function CheckpointVerification({ availableTeams = [], completedC
             setCurrentStep(1)
             setFormData({
                 team_id: "",
-                checkpoint_number: 1,
+                checkpoint_number: 2,
                 is_absent: false,
                 meeting_medium: "google_meet",
                 camera_on: false,
