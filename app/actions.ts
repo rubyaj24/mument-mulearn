@@ -134,22 +134,74 @@ export async function updateCheckpointAction(
 
 export async function saveSubscriptionAction(sub: any) {
     "use server"
+
+    if (!sub?.endpoint) {
+        return { success: false, message: "Missing push subscription endpoint" }
+    }
+
     const supabase = await createClient()
-    const user = await getMyProfile()
-    if (!user) return
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { success: false, message: "Unauthenticated" }
+    }
 
     // Parse the PushSubscriptionJSON
     const p256dh = sub.keys?.p256dh
     const auth = sub.keys?.auth
 
-    if (!p256dh || !auth) return
+    if (!p256dh || !auth) {
+        return { success: false, message: "Invalid push subscription keys" }
+    }
 
-    await supabase.from("push_subscriptions").upsert({
+    const { error } = await supabase.from("push_subscriptions").upsert({
         user_id: user.id,
         endpoint: sub.endpoint,
         p256dh,
         auth
     }, { onConflict: 'endpoint' })
+
+    if (error) {
+        console.error("[saveSubscriptionAction] Error:", error)
+        return {
+            success: false,
+            message: `Failed to save push subscription: ${error.message}`,
+        }
+    }
+
+    return { success: true }
+}
+
+export async function deleteSubscriptionAction(endpoint: string) {
+    "use server"
+
+    if (!endpoint) {
+        return { success: false, message: "Missing subscription endpoint" }
+    }
+
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { success: false, message: "Unauthenticated" }
+    }
+
+    const { error } = await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("endpoint", endpoint)
+
+    if (error) {
+        console.error("[deleteSubscriptionAction] Error:", error)
+        return { success: false, message: "Failed to delete subscription" }
+    }
+
+    return { success: true }
 }
 
 export async function updateUserRoleAction(userId: string, newRole: Role) {

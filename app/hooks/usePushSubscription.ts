@@ -1,20 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { saveSubscriptionAction } from "@/actions"
+import { deleteSubscriptionAction, saveSubscriptionAction } from "@/actions"
 
 export function usePushSubscription() {
     const [isSupported, setIsSupported] = useState(false)
     const [subscription, setSubscription] = useState<PushSubscription | null>(null)
-    const [headerKey, setHeaderKey] = useState<string | null>(null)
+    const [isSubscribed, setIsSubscribed] = useState(false)
+    const [isInitializing, setIsInitializing] = useState(true)
+    const [isMutating, setIsMutating] = useState(false)
+    const [lastError, setLastError] = useState<string | null>(null)
 
     useEffect(() => {
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             setIsSupported(true)
             registerServiceWorker()
-
-            // In production this should be environment variable
-            setHeaderKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BOvYPQrB3IXuIyqqn1YCP5uual0hfqS3JiBTMtWNFmSrXXxJ7br7T8LcrbQAbmaYgtcuKwXd963bTuec6vzSyEg")
+        } else {
+            setIsInitializing(false)
         }
     }, [])
 
@@ -26,21 +28,86 @@ export function usePushSubscription() {
             })
             const sub = await registration.pushManager.getSubscription()
             setSubscription(sub)
+            setIsSubscribed(!!sub)
         } catch (error) {
             console.error("SW Register failed", error)
+        } finally {
+            setIsInitializing(false)
+        }
+    }
+
+    async function getActiveSubscription() {
+        if (!isSupported) return null
+
+        if (subscription) {
+            return subscription
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready
+            const existingSubscription = await registration.pushManager.getSubscription()
+            setSubscription(existingSubscription)
+            setIsSubscribed(!!existingSubscription)
+            return existingSubscription
+        } catch (error) {
+            console.warn("Could not read existing push subscription", error)
+            return null
         }
     }
 
     async function subscribeToPush(retries = 3): Promise<boolean> {
-        if (!headerKey) {
-            console.error("No VAPID public key found")
+        if (!isSupported || isMutating) {
             return false
         }
 
-        console.log("Requesting notification permission...")
-        const permission = await Notification.requestPermission()
+        setLastError(null)
+
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidPublicKey) {
+            console.error("No VAPID public key found")
+            setLastError("Missing NEXT_PUBLIC_VAPID_PUBLIC_KEY in environment.")
+            return false
+        }
+
+        let applicationServerKey: Uint8Array
+        try {
+            applicationServerKey = new Uint8Array(urlBase64ToUint8Array(vapidPublicKey))
+            if (applicationServerKey.length !== 65) {
+                throw new Error("Invalid VAPID public key format (decoded length must be 65 bytes)")
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Invalid VAPID public key"
+            console.error(message)
+            setLastError(message)
+            return false
+        }
+
+        setIsMutating(true)
+
+        const existingSubscription = await getActiveSubscription()
+        if (existingSubscription) {
+            setIsMutating(false)
+            return true
+        }
+
+        const currentPermission = Notification.permission
+        if (currentPermission === 'denied') {
+            console.error("Notification permission denied")
+            setLastError("Notification permission denied in browser settings.")
+            setIsMutating(false)
+            return false
+        }
+
+        let permission: NotificationPermission = currentPermission
+        if (currentPermission === 'default') {
+            console.log("Requesting notification permission...")
+            permission = await Notification.requestPermission()
+        }
+
         if (permission !== 'granted') {
             console.error("Permission not granted:", permission)
+            setLastError("Notification permission was not granted.")
+            setIsMutating(false)
             return false
         }
 
@@ -56,11 +123,19 @@ export function usePushSubscription() {
                     )
                 ]) as ServiceWorkerRegistration
 
+                const existingSub = await registration.pushManager.getSubscription()
+                if (existingSub) {
+                    setSubscription(existingSub)
+                    setIsSubscribed(true)
+                    setIsMutating(false)
+                    return true
+                }
+
                 console.log("Subscribing to PushManager...")
                 const sub = await Promise.race([
                     registration.pushManager.subscribe({
                         userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(headerKey),
+                        applicationServerKey: applicationServerKey as unknown as BufferSource,
                     }),
                     new Promise<PushSubscription>((_, reject) =>
                         setTimeout(() => reject(new Error("Subscription timeout")), 10000)
@@ -69,23 +144,76 @@ export function usePushSubscription() {
 
                 console.log("Subscription successful:", sub)
                 setSubscription(sub)
+                setIsSubscribed(true)
 
                 console.log("Saving to server...")
-                await saveSubscriptionAction(JSON.parse(JSON.stringify(sub)))
+                const saveResult = await saveSubscriptionAction(JSON.parse(JSON.stringify(sub)))
+                if (!saveResult?.success) {
+                    const message = saveResult?.message ?? "Failed to save push subscription"
+                    setLastError(message)
+                    console.warn(message)
+                    setSubscription(null)
+                    setIsSubscribed(false)
+                    setIsMutating(false)
+                    return false
+                }
                 console.log("Saved to server.")
 
+                setIsMutating(false)
                 return true
             } catch (error) {
                 console.warn(`Subscription attempt ${i + 1} failed:`, error)
                 if (i === retries - 1) {
-                    console.error("All subscription attempts failed.")
+                    const message = error instanceof Error ? error.message : "Unknown subscribe error"
+                    const normalizedMessage = message.includes("push service error")
+                        ? "Browser push service registration failed. Verify browser settings."
+                        : message
+                    setLastError(normalizedMessage)
+                    console.warn("All subscription attempts failed.")
+                    setIsMutating(false)
                     return false
                 }
                 // Wait 1s before retrying
                 await new Promise(resolve => setTimeout(resolve, 1000))
             }
         }
+        setIsMutating(false)
         return false
+    }
+
+    async function unsubscribeFromPush(): Promise<boolean> {
+        if (!isSupported || isMutating) {
+            return false
+        }
+
+        setIsMutating(true)
+        try {
+            const activeSubscription = await getActiveSubscription()
+
+            if (!activeSubscription) {
+                setSubscription(null)
+                setIsSubscribed(false)
+                return true
+            }
+
+            const endpoint = activeSubscription.endpoint
+            await activeSubscription.unsubscribe()
+
+            const result = await deleteSubscriptionAction(endpoint)
+            if (!result.success) {
+                console.error(result.message)
+                return false
+            }
+
+            setSubscription(null)
+            setIsSubscribed(false)
+            return true
+        } catch (error) {
+            console.error("Failed to unsubscribe from push", error)
+            return false
+        } finally {
+            setIsMutating(false)
+        }
     }
 
     function urlBase64ToUint8Array(base64String: string) {
@@ -103,5 +231,14 @@ export function usePushSubscription() {
         return outputArray
     }
 
-    return { isSupported, subscription, subscribeToPush }
+    return {
+        isSupported,
+        subscription,
+        isSubscribed,
+        isInitializing,
+        isMutating,
+        lastError,
+        subscribeToPush,
+        unsubscribeFromPush,
+    }
 }

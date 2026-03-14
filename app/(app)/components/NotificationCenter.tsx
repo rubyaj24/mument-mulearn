@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Bell, Check, Trash2, BellOff, X } from "lucide-react"
+import { Bell, BellOff } from "lucide-react"
 import { usePushSubscription } from "@/hooks/usePushSubscription"
 import { getNotificationsAction, markNotificationReadAction, markAllNotificationsReadAction } from "@/actions"
 import { useToast } from "@/components/ToastProvider"
@@ -21,8 +21,19 @@ export default function NotificationCenter() {
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
-    const [isLoading, setIsLoading] = useState(false)
-    const { isSupported, subscription, subscribeToPush } = usePushSubscription()
+    const [isPermissionBlocked, setIsPermissionBlocked] = useState(() => {
+        if (typeof window === "undefined") return false
+        return Notification.permission === "denied"
+    })
+    const {
+        isSupported,
+        isSubscribed,
+        isInitializing,
+        isMutating,
+        lastError,
+        subscribeToPush,
+        unsubscribeFromPush,
+    } = usePushSubscription()
     const { show } = useToast()
     const router = useRouter()
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -52,22 +63,41 @@ export default function NotificationCenter() {
         }
         document.addEventListener("mousedown", handleClickOutside)
         return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [])
+    }, [isOpen])
 
     const handleEnablePush = async () => {
-        setIsLoading(true)
         try {
             const success = await subscribeToPush()
+            setIsPermissionBlocked(Notification.permission === "denied")
             if (success) {
                 show({ title: "Success", description: "You will now receive notifications!" })
             } else {
-                show({ title: "Error", description: "Failed to enable notifications. Check permissions." })
+                if (Notification.permission === "denied") {
+                    show({
+                        title: "Notifications blocked",
+                        description: "Enable Notifications in your browser site settings and try again.",
+                    })
+                } else {
+                    show({ title: "Setup failed", description: lastError ?? "Failed to enable notifications. Check permissions." })
+                }
             }
         } catch (error) {
             console.error(error)
             show({ title: "Error", description: "An unexpected error occurred." })
-        } finally {
-            setIsLoading(false)
+        }
+    }
+
+    const handleDisablePush = async () => {
+        try {
+            const success = await unsubscribeFromPush()
+            if (success) {
+                show({ title: "Success", description: "Push notifications disabled for this device." })
+            } else {
+                show({ title: "Error", description: "Failed to disable notifications." })
+            }
+        } catch (error) {
+            console.error(error)
+            show({ title: "Error", description: "An unexpected error occurred." })
         }
     }
 
@@ -118,7 +148,7 @@ export default function NotificationCenter() {
                     </div>
 
                     {/* Enable Push Banner */}
-                    {isSupported && !subscription && (
+                    {isSupported && !isInitializing && !isSubscribed && (
                         <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-start gap-3">
                             <BellOff className="text-blue-500 shrink-0 mt-0.5" size={16} />
                             <div>
@@ -126,14 +156,40 @@ export default function NotificationCenter() {
                                     Enable push notifications?
                                 </p>
                                 <p className="text-[10px] text-blue-600 mb-2 leading-tight">
-                                    Get alerts even when you're away.
+                                    Get alerts even when you are away.
                                 </p>
+                                {isPermissionBlocked && (
+                                    <p className="text-[10px] text-amber-700 mb-2 leading-tight">
+                                        Notifications are blocked in browser settings. Allow this site first.
+                                    </p>
+                                )}
                                 <button
                                     onClick={handleEnablePush}
-                                    disabled={isLoading}
+                                    disabled={isMutating}
                                     className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition disabled:opacity-50"
                                 >
-                                    {isLoading ? "Enabling..." : "Enable Now"}
+                                    {isMutating ? "Enabling..." : "Enable Now"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isSupported && !isInitializing && isSubscribed && (
+                        <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-start gap-3">
+                            <Bell className="text-emerald-600 shrink-0 mt-0.5" size={16} />
+                            <div>
+                                <p className="text-xs text-emerald-700 font-medium mb-1">
+                                    Push notifications enabled
+                                </p>
+                                <p className="text-[10px] text-emerald-600 mb-2 leading-tight">
+                                    You can disable this device anytime.
+                                </p>
+                                <button
+                                    onClick={handleDisablePush}
+                                    disabled={isMutating}
+                                    className="text-xs bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700 transition disabled:opacity-50"
+                                >
+                                    {isMutating ? "Disabling..." : "Disable"}
                                 </button>
                             </div>
                         </div>
